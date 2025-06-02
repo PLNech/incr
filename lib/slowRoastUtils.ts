@@ -1,323 +1,401 @@
-// Slow Roast Game Utilities and Mechanics
+// Slow Roast v2.0 - Game Engine and Mechanics
 
 import { 
-  SlowRoastGameState, 
+  GameState, 
   CustomerSegment, 
-  JAMES_HOFFMAN_WISDOM,
-  calculateCustomerVisits,
-  calculateRevenue,
-  getGentrificationMessages 
+  DailyEvent,
+  Achievement,
+  COFFEE_UPGRADES,
+  ACHIEVEMENTS,
+  COFFEE_WISDOM,
+  REVIEW_TEMPLATES,
+  ENDING_PATHS
 } from './slowRoastTypes';
 
-export class SlowRoastGameEngine {
-  static processDailyEvents(state: SlowRoastGameState): {
-    newState: SlowRoastGameState;
-    events: string[];
+export class SlowRoastEngine {
+  // Process daily progression (called every 30 seconds = 1 game day)
+  static processDailyEvents(state: GameState): {
+    newState: GameState;
+    events: DailyEvent[];
   } {
-    const events: string[] = [];
     const newState = { ...state };
-    const newResources = { ...state.resources };
+    const events: DailyEvent[] = [];
     
-    // Customer visits and coffee sales
-    let totalCustomers = 0;
-    let totalRevenue = 0;
-    let totalGentrification = 0;
+    // Advance day
+    newState.day += 1;
     
-    state.customerSegments.forEach(segment => {
-      const dailyVisitors = calculateCustomerVisits(segment, state.resources.reputation);
-      
-      if (dailyVisitors > 0) {
-        totalCustomers += dailyVisitors;
-        const revenue = calculateRevenue(dailyVisitors, segment, state.resources.reputation);
-        totalRevenue += revenue;
-        totalGentrification += dailyVisitors * segment.gentrificationContribution;
-        
-        // Consume beans (if available)
-        const beansNeeded = dailyVisitors * 0.5;
-        if (newResources.beans >= beansNeeded) {
-          newResources.beans -= beansNeeded;
-        } else {
-          // Not enough beans - lose potential customers
-          const lostCustomers = Math.floor((beansNeeded - newResources.beans) * 2);
-          totalCustomers -= lostCustomers;
-          events.push(`⚠️ Lost ${lostCustomers} customers due to insufficient beans!`);
-          newResources.beans = 0;
-        }
-      }
-    });
+    // Update game phase based on progression
+    newState.phase = this.determineGamePhase(newState);
     
-    // Update resources
-    if (totalCustomers > 0) {
-      newResources.customers += totalCustomers;
-      newResources.money += totalRevenue;
-      newResources.gentrification += totalGentrification;
-      
-      events.push(`Day ${state.day}: Served ${totalCustomers} customers, earned €${totalRevenue.toFixed(2)}`);
-      
-      // Bean warning
-      if (newResources.beans < 10) {
-        events.push("⚠️ Running low on coffee beans!");
-      }
-      
-      // Gentrification events
-      if (totalGentrification > 0.5) {
-        const gentrificationMessages = getGentrificationMessages(newResources.gentrification);
-        if (Math.random() < 0.3) {
-          events.push(gentrificationMessages[Math.floor(Math.random() * gentrificationMessages.length)]);
-        }
-      }
-    } else if (state.day > 3) {
-      events.push("No customers today. Maybe try educating the neighborhood about specialty coffee?");
+    // Process customer visits and Mrs. García arc
+    const customerResults = this.processCustomerInteractions(newState);
+    newState.dailyCustomers = customerResults.totalCustomers;
+    newState.dailyRevenue = customerResults.revenue;
+    newState.resources.money += customerResults.revenue;
+    newState.mrsGarciaStage = customerResults.mrsGarciaStage;
+    
+    // Update gentrification based on coffee level and customers
+    const gentrificationIncrease = this.calculateGentrificationIncrease(newState);
+    newState.resources.gentrification += gentrificationIncrease;
+    
+    // Update customer segments based on gentrification
+    newState.customerSegments = this.updateCustomerSegments(newState);
+    
+    // Generate daily review events
+    const reviewEvents = this.generateDailyReview(newState);
+    events.push(...reviewEvents);
+    
+    // Check for achievements
+    const achievementResults = this.checkAchievements(newState);
+    newState.achievements = achievementResults.achievements;
+    events.push(...achievementResults.events);
+    
+    // Check for ending conditions
+    const endingResult = this.checkEndingConditions(newState);
+    if (endingResult) {
+      newState.currentEnding = endingResult;
+      newState.phase = 'ending';
     }
     
-    // Reputation decay (very slow)
-    if (newResources.reputation > 0) {
-      newResources.reputation = Math.max(0, newResources.reputation - 0.1);
-    }
-    
-    // Random events
-    this.processRandomEvents(state, events);
-    
-    newState.resources = newResources;
-    newState.dailyEvents = events;
+    // Store events for display
+    newState.todaysEvents = events;
     
     return { newState, events };
   }
   
-  static processRandomEvents(state: SlowRoastGameState, events: string[]): void {
-    const random = Math.random();
-    
-    // Coffee influencer visit (rare)
-    if (random < 0.02 && state.resources.reputation > 30) {
-      events.push("☕ A coffee influencer posted about your shop! (+5 reputation, +10 knowledge)");
-      state.resources.reputation += 5;
-      state.resources.knowledge += 10;
-    }
-    
-    // Bean supplier shortage
-    else if (random < 0.05 && state.day > 10) {
-      events.push("📦 Your bean supplier is running late. Prices increased 20% this week.");
-    }
-    
-    // Local newspaper feature
-    else if (random < 0.03 && state.resources.reputation > 50) {
-      events.push("📰 Featured in 'Amsterdam Coffee Guide'! New customers discovered your shop.");
-      // This will affect tomorrow's customer visits
-    }
-    
-    // Competition opens
-    else if (random < 0.01 && state.day > 20) {
-      events.push("☕ Another specialty coffee shop opened nearby. Competition is heating up!");
-      // Slightly reduce customer base
-      state.customerSegments.forEach(segment => {
-        segment.size = Math.max(1, Math.floor(segment.size * 0.95));
-      });
-    }
+  // Determine current game phase
+  static determineGamePhase(state: GameState): GameState['phase'] {
+    if (state.day <= 2) return 'setup';
+    if (state.currentCoffeeLevel <= 1) return 'innocent';
+    if (state.resources.gentrification < 15) return 'snobbery';
+    if (state.currentEnding) return 'ending';
+    return 'realization';
   }
   
-  static educateCustomerSegment(
-    state: SlowRoastGameState, 
-    segmentId: string, 
-    knowledgeCost: number = 5
-  ): SlowRoastGameState {
-    if (state.resources.knowledge < knowledgeCost) {
-      return state; // Cannot afford education
-    }
-    
-    const newState = { ...state };
-    newState.resources = { ...state.resources };
-    newState.resources.knowledge -= knowledgeCost;
-    
-    newState.customerSegments = state.customerSegments.map(segment => {
-      if (segment.id === segmentId) {
-        const educationGain = 2 + Math.floor(Math.random() * 3); // 2-4 points
-        return {
-          ...segment,
-          education: Math.min(100, segment.education + educationGain)
-        };
-      }
-      return segment;
-    });
-    
-    // Add to daily events
-    const segment = state.customerSegments.find(s => s.id === segmentId);
-    if (segment) {
-      newState.dailyEvents = [
-        ...(newState.dailyEvents || []),
-        `Educated ${segment.name} about specialty coffee (+${2} education)`
-      ];
-    }
-    
-    return newState;
-  }
-  
-  static brewCoffeeManually(state: SlowRoastGameState): SlowRoastGameState {
-    if (state.resources.beans < 1) {
-      return state; // Cannot brew without beans
-    }
-    
-    const newState = { ...state };
-    newState.resources = { ...state.resources };
-    newState.resources.beans -= 1;
-    newState.resources.reputation += 0.1;
-    newState.resources.knowledge += 0.05;
-    
-    // Small chance for special event
-    if (Math.random() < 0.1) {
-      const wisdom = JAMES_HOFFMAN_WISDOM[Math.floor(Math.random() * JAMES_HOFFMAN_WISDOM.length)];
-      newState.dailyEvents = [
-        ...(newState.dailyEvents || []),
-        `While brewing, you remember: "${wisdom}"`
-      ];
-      newState.resources.knowledge += 0.5; // Bonus knowledge
-    }
-    
-    return newState;
-  }
-  
-  static purchaseBeans(state: SlowRoastGameState, quantity: number = 25, cost: number = 20): SlowRoastGameState {
-    if (state.resources.money < cost) {
-      return state; // Cannot afford beans
-    }
-    
-    const newState = { ...state };
-    newState.resources = { ...state.resources };
-    newState.resources.money -= cost;
-    newState.resources.beans += quantity;
-    
-    return newState;
-  }
-  
-  static unlockFeature(state: SlowRoastGameState, feature: string, cost: number): SlowRoastGameState {
-    if (state.resources.money < cost || state.unlockedFeatures.includes(feature)) {
-      return state; // Cannot afford or already unlocked
-    }
-    
-    const newState = { ...state };
-    newState.resources = { ...state.resources };
-    newState.resources.money -= cost;
-    newState.unlockedFeatures = [...state.unlockedFeatures, feature];
-    
-    // Special unlock effects
-    switch (feature) {
-      case 'upgrades_menu':
-        newState.dailyEvents = [
-          ...(newState.dailyEvents || []),
-          "🔓 Unlocked shop improvements! You can now purchase equipment and training."
-        ];
-        break;
-      case 'customer_analytics':
-        newState.dailyEvents = [
-          ...(newState.dailyEvents || []),
-          "📊 Advanced customer analytics available! Better understand your neighborhood."
-        ];
-        break;
-    }
-    
-    return newState;
-  }
-  
-  static checkAchievements(state: SlowRoastGameState): {
-    newState: SlowRoastGameState;
-    newAchievements: string[];
+  // Process customer interactions including Mrs. García arc
+  static processCustomerInteractions(state: GameState): {
+    totalCustomers: number;
+    revenue: number;
+    mrsGarciaStage: GameState['mrsGarciaStage'];
   } {
-    const newAchievements: string[] = [];
+    let totalCustomers = 0;
+    let revenue = 0;
     
-    // Check each achievement
-    const achievements = [
-      {
-        id: 'first_day',
-        name: 'First Day',
-        check: () => state.day >= 1
-      },
-      {
-        id: 'first_customer',
-        name: 'First Customer',
-        check: () => state.resources.customers >= 1
-      },
-      {
-        id: 'coffee_educator',
-        name: 'Coffee Educator',
-        check: () => state.customerSegments.reduce((sum, seg) => sum + seg.education, 0) >= 150
-      },
-      {
-        id: 'neighborhood_favorite',
-        name: 'Neighborhood Favorite',
-        check: () => state.resources.reputation >= 50
-      },
-      {
-        id: 'bean_hoarder',
-        name: 'Bean Hoarder',
-        check: () => state.resources.beans >= 200
-      },
-      {
-        id: 'money_maker',
-        name: 'Money Maker',
-        check: () => state.resources.money >= 1000
-      },
-      {
-        id: 'gentrification_catalyst',
-        name: 'Neighborhood Change',
-        check: () => state.resources.gentrification >= 25
-      }
-    ];
+    const currentCoffee = COFFEE_UPGRADES[state.currentCoffeeLevel];
     
-    achievements.forEach(achievement => {
-      if (!state.achievements.includes(achievement.id) && achievement.check()) {
-        newAchievements.push(achievement.id);
-      }
+    // Process each customer segment
+    state.customerSegments.forEach(segment => {
+      const segmentCustomers = this.calculateSegmentVisits(segment, state);
+      totalCustomers += segmentCustomers;
+      
+      // Calculate revenue based on coffee price and segment spending
+      const segmentRevenue = segmentCustomers * Math.min(currentCoffee.price, segment.spendingPower * 2);
+      revenue += segmentRevenue;
     });
     
-    const newState = { ...state };
-    if (newAchievements.length > 0) {
-      newState.achievements = [...state.achievements, ...newAchievements];
+    // Mrs. García special logic
+    const mrsGarciaStage = this.updateMrsGarciaArc(state, currentCoffee);
+    
+    return { totalCustomers, revenue, mrsGarciaStage };
+  }
+  
+  // Calculate how many customers from a segment visit today
+  static calculateSegmentVisits(segment: CustomerSegment, state: GameState): number {
+    const currentCoffee = COFFEE_UPGRADES[state.currentCoffeeLevel];
+    
+    // Base visit chance
+    let visitChance = 0.3;
+    
+    // Reduce visits if coffee is too expensive for segment
+    if (currentCoffee.price > segment.spendingPower * 1.5) {
+      visitChance *= 0.3; // Significant reduction
+    } else if (currentCoffee.price > segment.spendingPower) {
+      visitChance *= 0.6; // Moderate reduction
+    }
+    
+    // Coffee education increases visits for higher-end segments
+    if (segment.education > 30 && state.currentCoffeeLevel > 2) {
+      visitChance *= 1.4;
+    }
+    
+    // Gentrification affects different segments differently
+    if (segment.id === 'locals' && state.resources.gentrification > 10) {
+      visitChance *= Math.max(0.2, 1 - (state.resources.gentrification / 50));
+    }
+    
+    if (segment.id === 'young_professionals' && state.resources.gentrification > 5) {
+      visitChance *= 1 + (state.resources.gentrification / 30);
+    }
+    
+    return Math.floor(segment.size * visitChance * (0.5 + Math.random() * 0.5));
+  }
+  
+  // Update Mrs. García's story arc
+  static updateMrsGarciaArc(state: GameState, currentCoffee: typeof COFFEE_UPGRADES[0]): GameState['mrsGarciaStage'] {
+    // Mrs. García progression based on coffee price and gentrification
+    if (state.mrsGarciaStage === 'gone') return 'gone';
+    
+    if (currentCoffee.price >= 8 || state.resources.gentrification >= 15) {
+      return 'gone';
+    }
+    
+    if (currentCoffee.price >= 6 || state.resources.gentrification >= 8) {
+      return 'explains';
+    }
+    
+    if (currentCoffee.price >= 4 || state.resources.gentrification >= 4) {
+      return 'hesitant';
+    }
+    
+    return 'regular';
+  }
+  
+  // Calculate daily gentrification increase
+  static calculateGentrificationIncrease(state: GameState): number {
+    const currentCoffee = COFFEE_UPGRADES[state.currentCoffeeLevel];
+    let increase = currentCoffee.gentrificationImpact;
+    
+    // Multiply by customer volume effect
+    increase *= (1 + state.dailyCustomers / 100);
+    
+    // Add customer segment contributions
+    state.customerSegments.forEach(segment => {
+      const segmentCustomers = this.calculateSegmentVisits(segment, state);
+      increase += segmentCustomers * segment.gentrificationContribution;
+    });
+    
+    return Math.round(increase * 10) / 10; // Round to 1 decimal
+  }
+  
+  // Update customer segments based on gentrification level
+  static updateCustomerSegments(state: GameState): CustomerSegment[] {
+    return state.customerSegments.map(segment => {
+      const newSegment = { ...segment };
       
-      // Achievement rewards
-      newAchievements.forEach(achievementId => {
-        switch (achievementId) {
-          case 'first_customer':
-            newState.resources.knowledge += 5;
-            break;
-          case 'coffee_educator':
-            newState.resources.reputation += 10;
-            break;
-          case 'neighborhood_favorite':
-            newState.resources.influence += 5;
-            break;
-        }
+      // Locals decrease as gentrification increases
+      if (segment.id === 'locals') {
+        const reductionFactor = Math.max(0.3, 1 - (state.resources.gentrification / 40));
+        newSegment.size = Math.floor(40 * reductionFactor);
+      }
+      
+      // Young professionals increase
+      if (segment.id === 'young_professionals') {
+        const increaseFactor = 1 + (state.resources.gentrification / 25);
+        newSegment.size = Math.min(35, Math.floor(15 * increaseFactor));
+      }
+      
+      // Tourists increase moderately
+      if (segment.id === 'tourists') {
+        const increaseFactor = 1 + (state.resources.gentrification / 50);
+        newSegment.size = Math.min(30, Math.floor(20 * increaseFactor));
+      }
+      
+      return newSegment;
+    });
+  }
+  
+  // Generate daily review events (Yelp reviews, news, Instagram)
+  static generateDailyReview(state: GameState): DailyEvent[] {
+    const events: DailyEvent[] = [];
+    
+    // Daily Yelp review
+    const yelpReview = REVIEW_TEMPLATES.yelpReviews[
+      Math.floor(Math.random() * REVIEW_TEMPLATES.yelpReviews.length)
+    ];
+    events.push({
+      type: 'review',
+      title: 'Daily Yelp Review',
+      content: yelpReview,
+      tone: 'positive'
+    });
+    
+    // News based on gentrification level
+    if (state.resources.gentrification > 5 && Math.random() < 0.4) {
+      const newsHeadline = REVIEW_TEMPLATES.newsHeadlines[
+        Math.floor(Math.random() * REVIEW_TEMPLATES.newsHeadlines.length)
+      ];
+      events.push({
+        type: 'news',
+        title: 'Local News',
+        content: newsHeadline,
+        tone: state.resources.gentrification > 15 ? 'concerning' : 'neutral'
       });
     }
     
-    return { newState, newAchievements };
+    // Instagram post
+    if (Math.random() < 0.6) {
+      const instagramPost = REVIEW_TEMPLATES.instagramCaptions[
+        Math.floor(Math.random() * REVIEW_TEMPLATES.instagramCaptions.length)
+      ];
+      events.push({
+        type: 'review',
+        title: 'Instagram Post',
+        content: instagramPost,
+        tone: 'positive'
+      });
+    }
+    
+    return events;
   }
   
-  static updateGamePhase(state: SlowRoastGameState): SlowRoastGameState {
-    const newState = { ...state };
+  // Check and unlock achievements
+  static checkAchievements(state: GameState): {
+    achievements: Achievement[];
+    events: DailyEvent[];
+  } {
+    const events: DailyEvent[] = [];
+    const achievements = state.achievements.map(achievement => {
+      if (!achievement.unlocked && achievement.requirement(state)) {
+        events.push({
+          type: 'achievement',
+          title: 'Achievement Unlocked!',
+          content: `"${achievement.satiricalName}" - ${achievement.description}`,
+          tone: 'positive'
+        });
+        return { ...achievement, unlocked: true };
+      }
+      return achievement;
+    });
     
-    if (state.day <= 3) {
-      newState.gamePhase = 'setup';
-    } else if (state.resources.reputation < 25) {
-      newState.gamePhase = 'learning';
-    } else if (state.resources.reputation < 75) {
-      newState.gamePhase = 'growing';
-    } else if (state.resources.reputation < 150) {
-      newState.gamePhase = 'established';
-    } else {
-      newState.gamePhase = 'empire';
+    return { achievements, events };
+  }
+  
+  // Check for ending conditions
+  static checkEndingConditions(state: GameState): string | null {
+    // Sellout ending - high level coffee + high gentrification
+    if (state.currentCoffeeLevel >= 5 && state.resources.gentrification >= 25) {
+      return 'sellout';
     }
+    
+    // Purist ending - medium coffee level, moderate gentrification
+    if (state.currentCoffeeLevel >= 3 && state.day >= 20 && state.resources.gentrification < 15) {
+      return 'purist';
+    }
+    
+    // Awakened ending - player helped Mrs. García but she still left
+    if (state.playerHelpedMrsGarcia && state.mrsGarciaStage === 'gone') {
+      return 'awakened';
+    }
+    
+    // Game naturally ends after 30 days
+    if (state.day >= 30) {
+      if (state.resources.gentrification >= 20) return 'hypocrite';
+      if (state.currentCoffeeLevel <= 2) return 'escape';
+      return 'hypocrite';
+    }
+    
+    return null;
+  }
+  
+  // Upgrade coffee level
+  static upgradeCoffee(state: GameState, upgradeIndex: number): GameState {
+    const upgrade = COFFEE_UPGRADES[upgradeIndex];
+    if (!upgrade || state.resources.money < upgrade.cost) {
+      return state;
+    }
+    
+    const newState = { ...state };
+    newState.resources.money -= upgrade.cost;
+    newState.currentCoffeeLevel = upgradeIndex;
+    newState.unlockedUpgrades = [...state.unlockedUpgrades, upgrade.id];
     
     return newState;
   }
   
+  // Try to help Mrs. García (player choice)
+  static helpMrsGarcia(state: GameState, helpType: 'discount' | 'gift'): GameState {
+    const newState = { ...state };
+    newState.playerHelpedMrsGarcia = true;
+    newState.mrsGarciaInteractions += 1;
+    
+    if (helpType === 'gift') {
+      newState.resources.money -= 10; // Cost of helping
+    }
+    
+    // Helping doesn't change the outcome, but affects ending path
+    return newState;
+  }
+  
+  // Get available coffee upgrades for current day
+  static getAvailableUpgrades(state: GameState): typeof COFFEE_UPGRADES {
+    return COFFEE_UPGRADES.filter(upgrade => 
+      upgrade.unlockDay <= state.day && 
+      !state.unlockedUpgrades.includes(upgrade.id)
+    );
+  }
+  
+  // Get Mrs. García dialogue based on current stage
+  static getMrsGarciaDialogue(stage: GameState['mrsGarciaStage']): {
+    text: string;
+    canHelp: boolean;
+  } {
+    switch (stage) {
+      case 'regular':
+        return {
+          text: "Good morning! The usual coffee, please. How is business?",
+          canHelp: false
+        };
+      case 'hesitant':
+        return {
+          text: "Oh... the prices have changed. Well, I suppose everything is getting more expensive these days.",
+          canHelp: true
+        };
+      case 'explains':
+        return {
+          text: "I'm sorry, I had to pay other things first. Each of them having higher cost nowadays, not sure why? Maybe I'll just have water today.",
+          canHelp: true
+        };
+      case 'gone':
+        return {
+          text: "Mrs. García hasn't been seen in the neighborhood for weeks...",
+          canHelp: false
+        };
+    }
+  }
+  
+  // Get random coffee wisdom
   static getRandomWisdom(): string {
-    return JAMES_HOFFMAN_WISDOM[Math.floor(Math.random() * JAMES_HOFFMAN_WISDOM.length)];
+    return COFFEE_WISDOM[Math.floor(Math.random() * COFFEE_WISDOM.length)];
   }
   
+  // Get ending description
+  static getEndingDescription(endingId: string): typeof ENDING_PATHS[keyof typeof ENDING_PATHS] {
+    return ENDING_PATHS[endingId as keyof typeof ENDING_PATHS];
+  }
+  
+  // Initialize new game state
+  static initializeGameState(playerName: string, shopName: string): GameState {
+    return {
+      day: 1,
+      phase: 'setup',
+      resources: {
+        money: 200,
+        reputation: 0,
+        gentrification: 0
+      },
+      currentCoffeeLevel: 0,
+      unlockedUpgrades: ['basic_coffee'],
+      customerSegments: [...INITIAL_CUSTOMER_SEGMENTS],
+      dailyCustomers: 0,
+      dailyRevenue: 0,
+      mrsGarciaStage: 'regular',
+      mrsGarciaInteractions: 0,
+      playerHelpedMrsGarcia: false,
+      todaysEvents: [],
+      achievements: ACHIEVEMENTS.map(a => ({ ...a, unlocked: false })),
+      currentEnding: null,
+      playerName,
+      shopName
+    };
+  }
+  
+  // Format currency display
   static formatCurrency(amount: number): string {
-    return `€${amount.toFixed(2)}`;
+    return `€${Math.round(amount)}`;
   }
   
-  static formatNumber(num: number): string {
-    return Math.floor(num).toLocaleString();
+  // Format percentage display
+  static formatPercentage(value: number): string {
+    return `${Math.round(value * 10) / 10}%`;
   }
 }

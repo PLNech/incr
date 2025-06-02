@@ -50,16 +50,12 @@ export default function HomePage() {
   return (
     <div className="space-y-8">
       <section className="text-center py-8">
-        <h1 className="text-4xl font-bold mb-4">la incr factory 🏭</h1>
-        <p className="text-xl text-gray-300 mb-6">
-          quelque chose grandit ici...
-        </p>
-        
+        <h1 className="text-4xl font-bold mb-4">la incr factory 🏭</h1>        
         {globalState.gamesPlayed?.length > 0 && (
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 max-w-md mx-auto">
             <h3 className="font-semibold mb-2">ton incr aventure</h3>
-            <p className="text-gray-300">expériences incr': {globalState.gamesPlayed.length}</p>
-            <p className="text-gray-300">souvenirs incr': {globalState.globalAchievements?.length || 0}</p>
+            <p className="text-gray-300">Au moins {globalState.gamesPlayed.length} expérience{globalState.globalAchievements?.length > 1 ? "s":""} incr</p>
+            <p className="text-gray-300">Dont t'as gardé {globalState.globalAchievements?.length || 0} souvenirs</p>
           </div>
         )}
       </section>

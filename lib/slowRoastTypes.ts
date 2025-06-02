@@ -1,13 +1,8 @@
-// Slow Roast Game Types and Constants
+// Slow Roast v2.0 - Satirical Coffee Gentrification Simulator Types
 
 export interface Resources {
-  beans: number;
-  customers: number;
   money: number;
   reputation: number;
-  knowledge: number;
-  equipment: number;
-  influence: number;
   gentrification: number;
 }
 
@@ -15,87 +10,156 @@ export interface CustomerSegment {
   id: string;
   name: string;
   size: number;
-  education: number; // 0-100 how educated they are about coffee
-  preference: 'instant' | 'chain' | 'specialty' | 'third-wave';
+  education: number;
+  preference: string;
   spendingPower: number;
   gentrificationContribution: number;
-  description?: string;
+  description: string;
 }
 
-export interface Equipment {
+export interface CoffeeUpgrade {
   id: string;
   name: string;
   description: string;
+  price: number;
   cost: number;
-  beansPerSecond?: number;
-  qualityBonus?: number;
-  automationLevel?: number;
-  emoji: string;
+  gentrificationImpact: number;
+  unlockDay: number;
+  satiricalNote: string;
 }
 
-export interface Upgrade {
-  id: string;
-  name: string;
-  description: string;
-  cost: number;
-  effect: (state: SlowRoastGameState) => SlowRoastGameState;
-  unlockRequirement?: (state: SlowRoastGameState) => boolean;
-  category: 'equipment' | 'training' | 'automation' | 'expansion' | 'research';
-  emoji: string;
+export interface DailyEvent {
+  type: 'review' | 'news' | 'customer' | 'achievement';
+  title: string;
+  content: string;
+  tone: 'positive' | 'neutral' | 'concerning';
 }
 
 export interface Achievement {
   id: string;
   name: string;
   description: string;
-  requirement: (state: SlowRoastGameState) => boolean;
-  reward?: string;
-  hidden?: boolean;
-  emoji: string;
+  satiricalName: string;
+  requirement: (state: GameState) => boolean;
+  unlocked: boolean;
 }
 
-export interface NookEvent {
+export interface GameState {
+  // Core progression
   day: number;
-  message: string;
-  unlocks?: string[];
-  cost?: number;
-  effect?: (state: SlowRoastGameState) => SlowRoastGameState;
-}
-
-export interface SlowRoastGameState {
-  day: number;
+  phase: 'setup' | 'innocent' | 'snobbery' | 'realization' | 'ending';
+  
+  // Resources
   resources: Resources;
+  
+  // Coffee business
+  currentCoffeeLevel: number;
+  unlockedUpgrades: string[];
+  
+  // Customer data
   customerSegments: CustomerSegment[];
-  unlockedFeatures: string[];
-  automation: Record<string, boolean>;
-  achievements: string[];
+  dailyCustomers: number;
+  dailyRevenue: number;
+  
+  // Mrs. García arc
+  mrsGarciaStage: 'regular' | 'hesitant' | 'explains' | 'gone';
+  mrsGarciaInteractions: number;
+  playerHelpedMrsGarcia: boolean;
+  
+  // Daily events
+  todaysEvents: DailyEvent[];
+  
+  // Achievements & endings
+  achievements: Achievement[];
+  currentEnding: string | null;
+  
+  // Player identity
   playerName?: string;
   shopName?: string;
-  nextNookEvent: number;
-  gamePhase: 'setup' | 'learning' | 'growing' | 'established' | 'empire';
-  purchasedUpgrades: string[];
-  dailyEvents: string[];
-  gentrificationLevel: number;
 }
+
+// Coffee Snobbery Ladder
+export const COFFEE_UPGRADES: CoffeeUpgrade[] = [
+  {
+    id: 'basic_coffee',
+    name: 'Basic Coffee',
+    description: 'Simple, honest coffee. Nothing fancy.',
+    price: 2,
+    cost: 0,
+    gentrificationImpact: 0,
+    unlockDay: 1,
+    satiricalNote: 'Affordable for everyone. How naive.'
+  },
+  {
+    id: 'v60_pourover',
+    name: 'V60 Pour-over',
+    description: 'Hand-crafted precision brewing.',
+    price: 4,
+    cost: 150,
+    gentrificationImpact: 0.5,
+    unlockDay: 3,
+    satiricalNote: 'Artisanal excellence. Only €4!'
+  },
+  {
+    id: 'chemex_filtered',
+    name: 'Chemex Filtered',
+    description: 'Clean, bright, sophisticated.',
+    price: 6,
+    cost: 300,
+    gentrificationImpact: 1.0,
+    unlockDay: 6,
+    satiricalNote: 'Scientific brewing for cultured palates.'
+  },
+  {
+    id: 'single_origin',
+    name: 'Single Origin Ethiopian',
+    description: 'Traceable to the exact farm. Ethical sourcing.',
+    price: 8,
+    cost: 500,
+    gentrificationImpact: 1.5,
+    unlockDay: 10,
+    satiricalNote: 'Supporting farmers! (Just not local ones.)'
+  },
+  {
+    id: 'geisha_varietal',
+    name: 'Geisha Varietal',
+    description: 'Rare, delicate, transcendent. For true connoisseurs.',
+    price: 12,
+    cost: 800,
+    gentrificationImpact: 2.0,
+    unlockDay: 15,
+    satiricalNote: 'Exclusivity breeds excellence. And displacement.'
+  },
+  {
+    id: 'competition_grade',
+    name: 'Competition Grade',
+    description: 'Award-winning beans. Coffee perfection achieved.',
+    price: 15,
+    cost: 1200,
+    gentrificationImpact: 2.5,
+    unlockDay: 20,
+    satiricalNote: 'When your coffee costs more than minimum wage.'
+  },
+  {
+    id: 'nitrogen_reserve',
+    name: 'Nitrogen-Flushed Reserve',
+    description: 'Scientifically preserved. Ultimate freshness.',
+    price: 20,
+    cost: 2000,
+    gentrificationImpact: 3.0,
+    unlockDay: 25,
+    satiricalNote: 'Space-age coffee for earthbound gentrifiers.'
+  }
+];
 
 // Initial customer segments
 export const INITIAL_CUSTOMER_SEGMENTS: CustomerSegment[] = [
-  {
-    id: 'tourists',
-    name: 'Tourists',
-    size: 45,
-    education: 5,
-    preference: 'chain',
-    spendingPower: 3,
-    gentrificationContribution: 0.1,
-    description: 'Visitors looking for familiar coffee experiences'
-  },
   {
     id: 'locals',
     name: 'Local Residents',
     size: 40,
     education: 15,
-    preference: 'instant',
+    preference: 'basic',
     spendingPower: 2,
     gentrificationContribution: 0,
     description: 'Long-time neighborhood residents with established routines'
@@ -103,17 +167,84 @@ export const INITIAL_CUSTOMER_SEGMENTS: CustomerSegment[] = [
   {
     id: 'students',
     name: 'Students',
-    size: 15,
+    size: 25,
     education: 25,
     preference: 'chain',
-    spendingPower: 1,
-    gentrificationContribution: 0.05,
+    spendingPower: 1.5,
+    gentrificationContribution: 0.1,
     description: 'University students on tight budgets but open to new experiences'
+  },
+  {
+    id: 'tourists',
+    name: 'Tourists',
+    size: 20,
+    education: 10,
+    preference: 'chain',
+    spendingPower: 3,
+    gentrificationContribution: 0.2,
+    description: 'Visitors looking for authentic local experiences'
+  },
+  {
+    id: 'young_professionals',
+    name: 'Young Professionals',
+    size: 15,
+    education: 35,
+    preference: 'specialty',
+    spendingPower: 5,
+    gentrificationContribution: 0.5,
+    description: 'Tech workers and creatives with disposable income'
+  }
+];
+
+// Achievements with satirical corporate speak
+export const ACHIEVEMENTS: Achievement[] = [
+  {
+    id: 'first_upgrade',
+    name: 'Coffee Elevation',
+    description: 'Upgrade from basic coffee',
+    satiricalName: 'Market Differentiation Specialist',
+    requirement: (state) => state.currentCoffeeLevel > 0,
+    unlocked: false
+  },
+  {
+    id: 'price_out_locals',
+    name: 'Neighborhood Optimization',
+    description: 'Coffee price exceeds local comfort zone',
+    satiricalName: 'Community Value Enhancement Director',
+    requirement: (state) => {
+      const currentCoffee = COFFEE_UPGRADES[state.currentCoffeeLevel];
+      return currentCoffee?.price >= 6;
+    },
+    unlocked: false
+  },
+  {
+    id: 'mrs_garcia_gone',
+    name: 'Customer Retention Challenge',
+    description: 'Lost a longtime customer',
+    satiricalName: 'Demographic Transition Facilitator',
+    requirement: (state) => state.mrsGarciaStage === 'gone',
+    unlocked: false
+  },
+  {
+    id: 'high_gentrification',
+    name: 'Neighborhood Transformation',
+    description: 'Significantly impact local culture',
+    satiricalName: 'Cultural Landscape Architect',
+    requirement: (state) => state.resources.gentrification >= 20,
+    unlocked: false
+  },
+  {
+    id: 'coffee_moses',
+    name: 'Coffee Enlightenment',
+    description: 'Reach maximum coffee sophistication',
+    satiricalName: 'Artisanal Authenticity Prophet',
+    requirement: (state) => state.currentCoffeeLevel >= 6,
+    unlocked: false
   }
 ];
 
 // James Hoffman wisdom quotes
-export const JAMES_HOFFMAN_WISDOM = [
+export const COFFEE_WISDOM = [
   "The grind is more important than the machine.",
   "Temperature stability beats temperature accuracy.",
   "Light roasts reveal the coffee's true character.",
@@ -122,163 +253,59 @@ export const JAMES_HOFFMAN_WISDOM = [
   "Extraction is the art of controlled dissolution.",
   "The best coffee is the one you enjoy most... but let me tell you why you're wrong.",
   "Espresso is not a roast, it's a brewing method.",
-  "The perfect cup doesn't exist, but the pursuit of it is everything.",
-  "Coffee is a fruit, and we should treat it with the respect it deserves."
+  "The perfect cup doesn't exist, but the pursuit of it is everything."
 ];
 
-// Tom Nook events and interactions
-export const NOOK_EVENTS: NookEvent[] = [
-  {
-    day: 5,
-    message: "A friendly raccoon in a business suit stops by. 'Nook Coffee Supplies here! I see you're getting started. You'll need better equipment soon, yes yes?'",
-    unlocks: ['equipment_shop']
-  },
-  {
-    day: 15,
-    message: "Tom Nook returns: 'My, my! Business is growing! You know, I have some premium bean suppliers... but they're not cheap, yes yes?'",
-    unlocks: ['premium_beans']
-  },
-  {
-    day: 30,
-    message: "Nook slides a contract across your counter: 'Exclusive supplier deal! Very beneficial! (For me, mostly.) Sign here!'",
-    unlocks: ['nook_contracts'],
-    cost: 500
-  },
-  {
-    day: 50,
-    message: "Nook peers around your bustling café: 'Success! But think bigger, yes yes? Franchise opportunities await!'",
-    unlocks: ['franchise_options']
-  }
-];
-
-// Available equipment upgrades
-export const EQUIPMENT_CATALOG: Equipment[] = [
-  {
-    id: 'burr_grinder',
-    name: 'Burr Grinder',
-    description: 'Consistent grind size improves extraction quality',
-    cost: 150,
-    qualityBonus: 0.2,
-    emoji: '⚙️'
-  },
-  {
-    id: 'espresso_machine',
-    name: 'Espresso Machine',
-    description: 'Serve espresso drinks to discerning customers',
-    cost: 800,
-    beansPerSecond: 0.5,
-    qualityBonus: 0.5,
-    emoji: '🤖'
-  },
-  {
-    id: 'pour_over_station',
-    name: 'Pour Over Station',
-    description: 'Manual brewing station for specialty coffee education',
-    cost: 200,
-    qualityBonus: 0.3,
-    emoji: '☕'
-  },
-  {
-    id: 'roasting_setup',
-    name: 'Small Batch Roaster',
-    description: 'Roast your own beans for ultimate quality control',
-    cost: 2000,
-    beansPerSecond: 2,
-    qualityBonus: 1.0,
-    emoji: '🔥'
-  }
-];
-
-// Achievement definitions
-export const ACHIEVEMENTS: Achievement[] = [
-  {
-    id: 'first_day',
-    name: 'First Day',
-    description: 'Open your coffee shop',
-    requirement: (state) => state.day >= 1,
-    emoji: '🎉'
-  },
-  {
-    id: 'first_customer',
-    name: 'First Customer',
-    description: 'Serve your first customer',
-    requirement: (state) => state.resources.customers >= 1,
-    emoji: '👋'
-  },
-  {
-    id: 'coffee_educator',
-    name: 'Coffee Educator',
-    description: 'Educate 10 customers about specialty coffee',
-    requirement: (state) => state.customerSegments.reduce((sum, seg) => sum + seg.education, 0) >= 100,
-    emoji: '🎓'
-  },
-  {
-    id: 'neighborhood_favorite',
-    name: 'Neighborhood Favorite',
-    description: 'Reach 50 reputation points',
-    requirement: (state) => state.resources.reputation >= 50,
-    emoji: '⭐'
-  },
-  {
-    id: 'nook_victim',
-    name: 'Nook Customer',
-    description: 'Make your first purchase from Nook Coffee Supplies',
-    requirement: (state) => state.unlockedFeatures.includes('equipment_shop'),
-    emoji: '🦝',
-    hidden: true
-  },
-  {
-    id: 'coffee_snob',
-    name: 'Coffee Snob',
-    description: 'Refuse to add sugar to any drinks for 10 days straight',
-    requirement: (state) => state.achievements.includes('no_sugar_streak'),
-    emoji: '😤',
-    hidden: true
-  },
-  {
-    id: 'gentrification_catalyst',
-    name: 'Neighborhood Change',
-    description: 'Reach 25 gentrification points',
-    requirement: (state) => state.resources.gentrification >= 25,
-    emoji: '🏗️',
-    hidden: true,
-    reward: 'Unlock "Premium Neighborhood" customer segment'
-  }
-];
-
-// Utility functions for game mechanics
-export const calculateCustomerVisits = (segment: CustomerSegment, reputation: number): number => {
-  const educationFactor = Math.min(segment.education / 100, 0.8);
-  const reputationFactor = Math.min(reputation / 100, 0.5);
-  const baseVisitChance = 0.1 + educationFactor + reputationFactor;
-  
-  return Math.floor(segment.size * baseVisitChance * (0.5 + Math.random() * 0.5));
+// Daily review content templates
+export const REVIEW_TEMPLATES = {
+  yelpReviews: [
+    "★★★★★ 'This place is transforming the neighborhood! Finally, quality coffee!'",
+    "★★★★★ 'Love how this spot brings culture to the area. Worth every euro!'",
+    "★★★★★ 'Amazing single-origin! This neighborhood is really up-and-coming!'",
+    "★★★★★ 'Perfect coffee for the creative professional. Neighborhood character!'",
+    "★★★★☆ 'Great coffee but getting expensive. Still worth it for the experience.'"
+  ],
+  newsHeadlines: [
+    "Local Coffee Shop Brings Artisanal Culture to Historic Neighborhood",
+    "Property Values Rise 15% in Coffee District",
+    "Traditional Bakery Closes After 30 Years, Cites Rising Rent",
+    "Amsterdam Coffee Scene: From Working Class to World Class",
+    "Neighborhood Revitalization: Coffee Shop Leads Cultural Renaissance"
+  ],
+  instagramCaptions: [
+    "Perfect latte art in our little corner of Amsterdam ☕ #CommunitySpace",
+    "Single-origin Ethiopian bringing authentic culture to the neighborhood ✨",
+    "Nothing like hand-crafted coffee to build real community connections ❤️",
+    "This neighborhood's coffee game is seriously leveling up 🚀",
+    "Artisanal brewing where tradition meets innovation 🎨"
+  ]
 };
 
-export const calculateRevenue = (visitors: number, segment: CustomerSegment, reputation: number): number => {
-  const reputationBonus = 1 + Math.min(reputation / 100, 0.5);
-  return visitors * segment.spendingPower * reputationBonus;
-};
-
-export const getGentrificationMessages = (level: number): string[] => {
-  if (level < 10) return ["The neighborhood feels familiar and cozy."];
-  if (level < 25) return [
-    "You notice more young professionals walking by.",
-    "A new boutique opened down the street."
-  ];
-  if (level < 50) return [
-    "Property values are rising in the area.",
-    "Some longtime residents seem concerned about changes.",
-    "The local newspaper mentions 'revitalization efforts.'"
-  ];
-  if (level < 75) return [
-    "Several traditional shops have closed recently.",
-    "New high-end restaurants are opening nearby.",
-    "You overhear complaints about rising rents."
-  ];
-  return [
-    "The neighborhood is barely recognizable.",
-    "Most original residents have moved away.",
-    "Your coffee shop is now considered 'authentic local character.'"
-  ];
+// Ending paths
+export const ENDING_PATHS = {
+  sellout: {
+    name: 'The Sellout',
+    description: 'Full corporate expansion, maximum profit',
+    satiricalTitle: 'Caffeine Capitalist - Professional Level'
+  },
+  purist: {
+    name: 'The Purist', 
+    description: 'Artisan to the end, cultural destruction through quality',
+    satiricalTitle: 'Authentic Authenticity Destroyer'
+  },
+  hypocrite: {
+    name: 'The Hypocrite',
+    description: 'Community values rhetoric, elite pricing reality',
+    satiricalTitle: 'Sustainable Sustainability Theater Director'
+  },
+  awakened: {
+    name: 'The Awakened',
+    description: 'Realizes the problem, limited power to change',
+    satiricalTitle: 'Conscious Gentrification Facilitator'
+  },
+  escape: {
+    name: 'The Escape',
+    description: 'Abandons before becoming the problem',
+    satiricalTitle: 'Ethical Exit Strategy Implementer'
+  }
 };

@@ -2,7 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'La incr Factory',
+  title: 'La incr Factory 🏭',
   description: 'Une collection d\'incremental games farfelus.',
 }
 
