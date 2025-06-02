@@ -130,7 +130,10 @@ export default function SlowRoastPage() {
       setGameState(prev => ({
         ...prev,
         ...saved.progress,
-        resources: saved.resources || prev.resources,
+        resources: {
+          ...prev.resources,
+          ...(saved.resources as Resources)
+        },
         achievements: saved.achievements || [],
         playerName: saved.playerName,
       }));
