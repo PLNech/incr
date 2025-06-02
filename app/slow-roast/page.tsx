@@ -132,7 +132,7 @@ export default function SlowRoastPage() {
         ...saved.progress,
         resources: {
           ...prev.resources,
-          ...(saved.resources as Resources)
+          ...(saved.resources as unknown as Resources)
         },
         achievements: saved.achievements || [],
         playerName: saved.playerName,
