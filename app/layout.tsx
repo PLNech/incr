@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'La incr Factory',
-  description: 'Une collection de'incremental games farfelus.',
+  description: 'Une collection d\'incremental games farfelus.',
 }
 
 export default function RootLayout({
