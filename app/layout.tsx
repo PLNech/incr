@@ -2,8 +2,8 @@ import './globals.css'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Incremental Games Factory',
-  description: 'A collection of incremental and idle games',
+  title: 'La incr Factory',
+  description: 'Une collection de'incremental games farfelus.',
 }
 
 export default function RootLayout({
@@ -18,7 +18,7 @@ export default function RootLayout({
           <div className="max-w-6xl mx-auto">
             <h1 className="text-2xl font-bold">
               <a href="/" className="hover:text-blue-400 transition-colors">
-                🏭 Incremental Games Factory
+                🏭 la incr factory
               </a>
             </h1>
           </div>
@@ -30,7 +30,7 @@ export default function RootLayout({
         
         <footer className="bg-gray-800 border-t border-gray-700 p-4 mt-8">
           <div className="max-w-6xl mx-auto text-center text-gray-400">
-            <p>Incremental Games Factory - Build, Idle, Progress</p>
+            <p>la incr factory - vers le haut et la droite</p>
           </div>
         </footer>
       </body>
