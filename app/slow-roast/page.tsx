@@ -145,7 +145,7 @@ export default function SlowRoastPage() {
     const gsm = GameStateManager.getInstance();
     gsm.saveGameState('slow-roast', {
       progress: gameState,
-      resources: gameState.resources,
+      resources: gameState.resources as unknown as Record<string, number>,
       achievements: gameState.achievements,
       playerName: gameState.playerName,
     });
