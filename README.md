@@ -1,4 +1,6 @@
-# Incremental Games Factory 🏭
+# incr 🏭
+
+La incr factory 
 
 A collection of interconnected incremental games built with Next.js and deployed on GitHub Pages.
 
