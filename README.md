@@ -4,6 +4,9 @@ La incr factory
 
 A collection of interconnected incremental games built with Next.js and deployed on GitHub Pages.
 
+[![Example Gallery](https://github.com/user-attachments/assets/553ed5c6-f7e4-44dd-b09b-8809ef16fa84)](https://plnech.github.io/incr/)
+
+
 ## Current Games
 
 ### ☕ Slow Roast
