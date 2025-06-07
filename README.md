@@ -29,7 +29,7 @@ En 2025, plus tu codes, moins tu codes.
 
 ### 🌐 Propagation Inc.
 Manage a network of information and watch it spread. Make strategic decisions to control the narrative and achieve global influence.
-- **Play Game**: [Propagation Inc.](/propagation-inc)
+- **Play Game**: [Propagation Inc.](https://propagation.vercel.app/)
 - **GitHub**: [https://github.com/PLNech/Propagation](https://github.com/PLNech/Propagation)
 
 ## Setup Instructions for GitHub Pages
