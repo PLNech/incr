@@ -15,6 +15,23 @@ Build a specialty coffee empire in Amsterdam! Start with a small café and grow 
 - **Nook Coffee Supplies**: Navigate business relationships with a certain raccoon
 - **Neighborhood Dynamics**: Watch as your success changes the area around you
 
+## External Games
+
+### 🔊 StrudleIdle
+Livecoding as an idle game 🎛️🎮
+- **Play Game**: [StrudleIdle](https://plnech.github.io/StrudelIdle/)
+- **GitHub**: [https://github.com/PLNech/StrudleIdle](https://github.com/PLNech/StrudleIdle)
+
+### 💻 Le Dernier Code
+En 2025, plus tu codes, moins tu codes.
+- **Play Game**: [Le Dernier Code](https://dernier-code.vercel.app/)
+- **GitHub**: [https://github.com/plnech/DernierCode](https://github.com/plnech/DernierCode)
+
+### 🌐 Propagation Inc.
+Manage a network of information and watch it spread. Make strategic decisions to control the narrative and achieve global influence.
+- **Play Game**: [Propagation Inc.](https://propagation.vercel.app/)
+- **GitHub**: [https://github.com/PLNech/Propagation](https://github.com/PLNech/Propagation)
+
 ## Setup Instructions for GitHub Pages
 
 ### 1. Create GitHub Repository
