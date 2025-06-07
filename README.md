@@ -15,6 +15,23 @@ Build a specialty coffee empire in Amsterdam! Start with a small café and grow 
 - **Nook Coffee Supplies**: Navigate business relationships with a certain raccoon
 - **Neighborhood Dynamics**: Watch as your success changes the area around you
 
+## External Games
+
+### 🥨 StrudleIdle
+Become the ultimate pastry chef in this idle game. Bake delicious strudels, unlock new recipes, and expand your bakery empire.
+- **Play Game**: [StrudleIdle](/strudle-idle)
+- **GitHub**: [https://github.com/example/strudle-idle](https://github.com/example/strudle-idle)
+
+### 💻 Le Dernier Code
+A text-based adventure game where you must solve puzzles and uncover secrets to find the last piece of working code in a post-apocalyptic world.
+- **Play Game**: [Le Dernier Code](/le-dernier-code)
+- **GitHub**: [https://github.com/example/le-dernier-code](https://github.com/example/le-dernier-code)
+
+### 🌐 Propagation Inc.
+Manage a network of information and watch it spread. Make strategic decisions to control the narrative and achieve global influence.
+- **Play Game**: [Propagation Inc.](/propagation-inc)
+- **GitHub**: [https://github.com/example/propagation-inc](https://github.com/example/propagation-inc)
+
 ## Setup Instructions for GitHub Pages
 
 ### 1. Create GitHub Repository

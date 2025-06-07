@@ -11,6 +11,8 @@ interface GameInfo {
   emoji: string;
   status: 'available' | 'locked' | 'coming-soon';
   unlockRequirement?: string;
+  githubUrl?: string;
+  url?: string;
 }
 
 const GAMES: GameInfo[] = [
@@ -19,7 +21,9 @@ const GAMES: GameInfo[] = [
     title: 'Slow Roast',
     description: 'Build a specialty coffee empire in Amsterdam. Educate customers, perfect your craft, and navigate the complexities of neighborhood change.',
     emoji: '☕',
-    status: 'available'
+    status: 'available',
+    githubUrl: 'https://github.com/example/slow-roast',
+    url: '/slow-roast'
   },
   {
     id: 'mystery-game',
@@ -27,7 +31,36 @@ const GAMES: GameInfo[] = [
     description: 'might reveal more if you play Slow Roast...',
     emoji: '🌫️',
     status: 'locked',
-    unlockRequirement: 'Complete Slow Roast'
+    unlockRequirement: 'Complete Slow Roast',
+    githubUrl: 'https://github.com/example/mystery-game',
+    url: '/mystery-game'
+  },
+  {
+    id: 'strudle-idle',
+    title: 'StrudleIdle',
+    description: 'Become the ultimate pastry chef in this idle game. Bake delicious strudels, unlock new recipes, and expand your bakery empire.',
+    emoji: '🥨',
+    status: 'available',
+    githubUrl: 'https://github.com/example/strudle-idle',
+    url: '/strudle-idle'
+  },
+  {
+    id: 'le-dernier-code',
+    title: 'Le Dernier Code',
+    description: 'A text-based adventure game where you must solve puzzles and uncover secrets to find the last piece of working code in a post-apocalyptic world.',
+    emoji: '💻',
+    status: 'available',
+    githubUrl: 'https://github.com/example/le-dernier-code',
+    url: '/le-dernier-code'
+  },
+  {
+    id: 'propagation-inc',
+    title: 'Propagation Inc.',
+    description: 'Manage a network of information and watch it spread. Make strategic decisions to control the narrative and achieve global influence.',
+    emoji: '🌐',
+    status: 'available',
+    githubUrl: 'https://github.com/example/propagation-inc',
+    url: '/propagation-inc'
   }
 ];
 
@@ -58,6 +91,18 @@ export default function HomePage() {
             <p className="text-gray-300">Dont t'as gardé {globalState.globalAchievements?.length || 0} souvenirs</p>
           </div>
         )}
+      </section>
+
+      <section className="py-8 bg-gray-800 rounded-lg mb-8">
+        <h2 className="text-3xl font-bold text-center mb-6 text-yellow-400">Highlight: StrudleIdle 🥨</h2>
+        <div className="max-w-2xl mx-auto text-center">
+          <p className="text-lg text-gray-300 mb-4">
+            Become the ultimate pastry chef in this idle game. Bake delicious strudels, unlock new recipes, and expand your bakery empire.
+          </p>
+          <Link href="/strudle-idle" className="btn-primary inline-block">
+            Play StrudleIdle Now!
+          </Link>
+        </div>
       </section>
 
       <section>
