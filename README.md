@@ -17,20 +17,20 @@ Build a specialty coffee empire in Amsterdam! Start with a small café and grow 
 
 ## External Games
 
-### 🥨 StrudleIdle
-Become the ultimate pastry chef in this idle game. Bake delicious strudels, unlock new recipes, and expand your bakery empire.
-- **Play Game**: [StrudleIdle](/strudle-idle)
-- **GitHub**: [https://github.com/example/strudle-idle](https://github.com/example/strudle-idle)
+### 🔊 StrudleIdle
+Livecoding as an idle game 🎛️🎮
+- **Play Game**: [StrudleIdle](https://plnech.github.io/StrudelIdle/)
+- **GitHub**: [https://github.com/PLNech/StrudleIdle](https://github.com/PLNech/StrudleIdle)
 
 ### 💻 Le Dernier Code
-A text-based adventure game where you must solve puzzles and uncover secrets to find the last piece of working code in a post-apocalyptic world.
-- **Play Game**: [Le Dernier Code](/le-dernier-code)
-- **GitHub**: [https://github.com/example/le-dernier-code](https://github.com/example/le-dernier-code)
+En 2025, plus tu codes, moins tu codes.
+- **Play Game**: [Le Dernier Code](https://dernier-code.vercel.app/)
+- **GitHub**: [https://github.com/plnech/DernierCode](https://github.com/plnech/DernierCode)
 
 ### 🌐 Propagation Inc.
 Manage a network of information and watch it spread. Make strategic decisions to control the narrative and achieve global influence.
 - **Play Game**: [Propagation Inc.](/propagation-inc)
-- **GitHub**: [https://github.com/example/propagation-inc](https://github.com/example/propagation-inc)
+- **GitHub**: [https://github.com/PLNech/Propagation](https://github.com/PLNech/Propagation)
 
 ## Setup Instructions for GitHub Pages
 
