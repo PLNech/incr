@@ -22,7 +22,7 @@ const GAMES: GameInfo[] = [
     description: 'Build a specialty coffee empire in Amsterdam. Educate customers, perfect your craft, and navigate the complexities of neighborhood change.',
     emoji: '☕',
     status: 'available',
-    githubUrl: 'https://github.com/example/slow-roast',
+    githubUrl: 'https://github.com/PLNech/incr/',
     url: '/slow-roast'
   },
   {
@@ -35,33 +35,33 @@ const GAMES: GameInfo[] = [
     githubUrl: 'https://github.com/example/mystery-game',
     url: '/mystery-game'
   },
-  {
-    id: 'strudle-idle',
-    title: 'StrudleIdle',
-    description: 'Become the ultimate pastry chef in this idle game. Bake delicious strudels, unlock new recipes, and expand your bakery empire.',
-    emoji: '🥨',
-    status: 'available',
-    githubUrl: 'https://github.com/example/strudle-idle',
-    url: '/strudle-idle'
-  },
-  {
-    id: 'le-dernier-code',
-    title: 'Le Dernier Code',
-    description: 'A text-based adventure game where you must solve puzzles and uncover secrets to find the last piece of working code in a post-apocalyptic world.',
-    emoji: '💻',
-    status: 'available',
-    githubUrl: 'https://github.com/example/le-dernier-code',
-    url: '/le-dernier-code'
-  },
-  {
-    id: 'propagation-inc',
-    title: 'Propagation Inc.',
-    description: 'Manage a network of information and watch it spread. Make strategic decisions to control the narrative and achieve global influence.',
-    emoji: '🌐',
-    status: 'available',
-    githubUrl: 'https://github.com/example/propagation-inc',
-    url: '/propagation-inc'
-  }
+{
+  id: 'strudle-idle',
+  title: 'StrudleIdle',
+  description: 'Livecoding as an idle game 🎛️🎮',
+  emoji: '🥨',
+  status: 'available',
+  githubUrl: 'https://github.com/PLNech/StrudleIdle',
+  url: 'https://plnech.github.io/StrudelIdle/'
+},
+{
+  id: 'le-dernier-code',
+  title: 'Le Dernier Code',
+  description: 'En 2025, plus tu codes, moins tu codes.',
+  emoji: '💻',
+  status: 'available',
+  githubUrl: 'https://github.com/plnech/DernierCode',
+  url: 'https://dernier-code.vercel.app/'
+},
+{
+  id: 'propagation-inc',
+  title: 'Propagation Inc.',
+  description: 'Manage a network of information and watch it spread. Make strategic decisions to control the narrative and achieve global influence.',
+  emoji: '🌐',
+  status: 'available',
+  githubUrl: 'https://github.com/PLNech/Propagation',
+  url: 'https://propagation.vercel.app/'
+}
 ];
 
 export default function HomePage() {
