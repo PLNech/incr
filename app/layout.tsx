@@ -30,7 +30,7 @@ export default function RootLayout({
         
         <footer className="bg-gray-800 border-t border-gray-700 p-4 mt-8">
           <div className="max-w-6xl mx-auto text-center text-gray-400">
-            <p>la incr factory - vers le haut et la droite</p>
+            <h3>la incr factory &larr; vers la lune 🌒 &rarr; par <a href="https://me.nech.pl" className='hover:text-blue-400 underline'>PLN</a> &lt;3 </h3>
           </div>
         </footer>
       </body>

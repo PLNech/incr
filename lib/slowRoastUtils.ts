@@ -9,7 +9,8 @@ import {
   ACHIEVEMENTS,
   COFFEE_WISDOM,
   REVIEW_TEMPLATES,
-  ENDING_PATHS
+  ENDING_PATHS,
+  INITIAL_CUSTOMER_SEGMENTS
 } from './slowRoastTypes';
 
 export class SlowRoastEngine {

@@ -94,13 +94,15 @@ export default function HomePage() {
       </section>
 
       <section className="py-8 bg-gray-800 rounded-lg mb-8">
-        <h2 className="text-3xl font-bold text-center mb-6 text-yellow-400">Highlight: StrudleIdle 🥨</h2>
+        <h2 className="text-3xl font-bold text-center mb-6 text-yellow-400">Highlight: StrudleIdle 🎛️🥨🔊</h2>
         <div className="max-w-2xl mx-auto text-center">
           <p className="text-lg text-gray-300 mb-4">
-            Become the ultimate pastry chef in this idle game. Bake delicious strudels, unlock new recipes, and expand your bakery empire.
+            Become the ultimate pastry chef in this incr' game. Bake <i>delicious</i> strudels...<br />
+            AH WAIT NO! IT'S <b>ALGORAVE IDLE</b> 🎉 <br />
+            Unlock samples, buy upgrades that make better patterns, and idle rock the party!
           </p>
-          <Link href="/strudle-idle" className="btn-primary inline-block">
-            Play StrudleIdle Now!
+          <Link href="https://plnech.github.io/StrudelIdle/" className="btn-primary inline-block">
+            Jam on StrudleIdle 🔊
           </Link>
         </div>
       </section>
@@ -130,7 +132,7 @@ export default function HomePage() {
                 )}
                 
                 {unlocked ? (
-                  <Link href={`/${game.id}`} className="btn-primary block text-center">
+                  <Link href={game.url} className="btn-primary block text-center">
                     {gameState ? 'Continue' : 'Start Game'}
                   </Link>
                 ) : (
