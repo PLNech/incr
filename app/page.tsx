@@ -26,6 +26,15 @@ const GAMES: GameInfo[] = [
     url: '/slow-roast'
   },
   {
+    id: 'berg-inc',
+    title: 'BergInc',
+    description: 'Experience the evolution of Berlin\'s techno scene from underground sanctuary to corporate asset. Watch as growth destroys the very culture it claims to celebrate.',
+    emoji: '🎛️',
+    status: 'available',
+    githubUrl: 'https://github.com/PLNech/incr/',
+    url: '/berg'
+  },
+  {
     id: 'mystery-game',
     title: '???',
     description: 'might reveal more if you play Slow Roast...',

@@ -9,6 +9,8 @@ A collection of interconnected incremental games built with Next.js and deployed
 
 ## Current Games
 
+### NEXT BIG PROJECT: Le BergInc:tm:
+TODO: DEVELOP BERGHAIN INCREMENTAL
 ### ☕ Slow Roast
 Build a specialty coffee empire in Amsterdam! Start with a small café and grow into a coffee culture influencer. Features:
 - **Resource Management**: Coffee beans, money, reputation, knowledge, and more

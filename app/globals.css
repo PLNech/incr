@@ -48,6 +48,10 @@ button:active {
   @apply bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors;
 }
 
+.resource-display {
+  @apply bg-gray-800 border border-gray-700 rounded-lg p-4 text-center;
+}
+
 .progress-bar {
   @apply w-full bg-gray-700 rounded-full h-2;
 }
