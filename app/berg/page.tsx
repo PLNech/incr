@@ -319,6 +319,71 @@ export default function BergIncPage() {
     });
   }, [gameState]);
 
+  // Export save data
+  const exportSave = useCallback(() => {
+    const gsm = GameStateManager.getInstance();
+    const data = gsm.exportAllData();
+    
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `berginc-save-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log('💾 Save exported successfully');
+  }, []);
+
+  // Import save data
+  const importSave = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        try {
+          const data = e.target.result;
+          const gsm = GameStateManager.getInstance();
+          
+          if (gsm.importData(data)) {
+            // Reload the game state
+            const saved = gsm.loadGameState('berg');
+            if (saved.progress) {
+              setGameState(ensureCompleteGameState(saved.progress));
+              setGameStarted(true);
+              console.log('📥 Save imported successfully');
+              
+              // Show success feedback
+              const originalButtonText = 'Import';
+              const importButton = document.querySelector('[data-import-button]');
+              if (importButton) {
+                importButton.textContent = '✅ Imported!';
+                setTimeout(() => {
+                  importButton.textContent = originalButtonText;
+                }, 2000);
+              }
+            }
+          } else {
+            console.error('❌ Failed to import save file');
+            alert('Failed to import save file. Please check the file format.');
+          }
+        } catch (error) {
+          console.error('❌ Error importing save:', error);
+          alert('Error importing save file. Please check the file format.');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }, []);
+
   useEffect(() => {
     if (gameState) {
       const interval = setInterval(saveGame, 10000);
@@ -573,12 +638,22 @@ export default function BergIncPage() {
       
       // Update bouncer system
       if (bouncerSystemRef.current) {
+        const queueSizeBefore = bouncerSystemRef.current.getQueueSize();
         bouncerSystemRef.current.update(deltaTime);
         bouncerSystemRef.current.setTier(gameState.tier);
+        const queueSizeAfter = bouncerSystemRef.current.getQueueSize();
+        
+        // Log when bouncer processes someone
+        if (queueSizeBefore > queueSizeAfter) {
+          console.log(`🎭 Bouncer processed someone: queue ${queueSizeBefore} -> ${queueSizeAfter}`);
+          canvasNeedsRedrawRef.current = true;
+        }
       }
       
-      // Check for new visitor arrivals (every 2 seconds)
-      if (now - lastVisitorCheckRef.current > 2000 && visitorArrivalSystemRef.current) {
+      // Check for new visitor arrivals (every 5 seconds, more frequent for testing)
+      if (now - lastVisitorCheckRef.current > 5000 && visitorArrivalSystemRef.current) {
+        lastVisitorCheckRef.current = now;
+        
         const dayOfWeek = new Date().getDay();
         const hour = new Date().getHours();
         const lineup = 10 + Math.floor(Math.random() * 11);
@@ -592,7 +667,9 @@ export default function BergIncPage() {
           tier: gameState.tier
         };
         
-        const newArrivals = visitorArrivalSystemRef.current.generateArrivals(arrivalFactors, deltaTime);
+        console.log('🕒 Checking for arrivals:', arrivalFactors);
+        const newArrivals = visitorArrivalSystemRef.current.generateArrivals(arrivalFactors, 5000); // Pass 5 seconds in ms
+        console.log('👥 Generated arrivals:', newArrivals.length);
         
         // Convert visitor groups to agents and add to bouncer queue
         if (bouncerSystemRef.current && newArrivals.length > 0) {
@@ -631,12 +708,15 @@ export default function BergIncPage() {
               if (bouncerSystemRef.current.addToQueue(agent)) {
                 agentsRef.current.push(agent);
                 totalNewArrivals++;
+                console.log(`✅ Added ${agent.getFullName()} to queue (${isGuestList ? 'guest list' : 'regular'})`);
+              } else {
+                console.log(`❌ Failed to add ${agent.getFullName()} to queue`);
               }
             }
           });
           
           if (totalNewArrivals > 0) {
-            console.log(`🚶 ${totalNewArrivals} new visitors joined queue`);
+            console.log(`🚶 ${totalNewArrivals} new visitors joined queue (queue size: ${bouncerSystemRef.current.getQueueSize()})`);
             canvasNeedsRedrawRef.current = true;
           }
         }
@@ -962,8 +1042,51 @@ export default function BergIncPage() {
     console.log('New game state:', newGameState);
     
     // Initialize queue with some initial visitors
-    if (visitorArrivalSystemRef.current) {
+    if (visitorArrivalSystemRef.current && bouncerSystemRef.current) {
+      console.log('🎬 Adding initial visitors to queue...');
       const initialGroups = visitorArrivalSystemRef.current.getInitialQueue(0);
+      console.log('👥 Initial groups:', initialGroups.length);
+      
+      // Add initial visitors directly to bouncer queue
+      initialGroups.forEach(group => {
+        for (let i = 0; i < group.size; i++) {
+          const isGuestList = Math.random() < 0.05; // Lower chance for initial visitors
+          
+          const agent = new Agent(
+            `initial-${Date.now()}-${Math.random()}`,
+            35, 35,
+            {
+              type: group.type as AgentType,
+              stamina: 80 + Math.random() * 20,
+              socialEnergy: 60 + Math.random() * 40,
+              entertainment: 50 + Math.random() * 50
+            }
+          );
+          
+          agent.isGuestList = isGuestList;
+          agent.setFloor(Floor.GROUND);
+          
+          // Initialize systems
+          const memorySystem = new MemorySystem(agent);
+          memorySystemsRef.current.set(agent.id, memorySystem);
+          
+          if (pathfindingRef.current) {
+            agent.setPathfinder(pathfindingRef.current);
+          }
+          
+          if (reputationSystemRef.current) {
+            reputationSystemRef.current.getAgentReputation(agent.id);
+          }
+          
+          if (bouncerSystemRef.current!.addToQueue(agent)) {
+            agentsRef.current.push(agent);
+            console.log(`🚶 Added initial visitor ${agent.getFullName()} to queue`);
+          }
+        }
+      });
+      
+      console.log(`🎯 Initial queue size: ${bouncerSystemRef.current.getQueueSize()}`);
+      
       const initialQueue: Clubber[] = [];
       
       initialGroups.forEach(group => {
@@ -1454,6 +1577,12 @@ export default function BergIncPage() {
             </button>
             <button onClick={saveGame} className="opacity-60 hover:opacity-100 transition-opacity">
               Save
+            </button>
+            <button onClick={exportSave} className="opacity-60 hover:opacity-100 transition-opacity text-sm" title="Export save file">
+              💾 Export
+            </button>
+            <button onClick={importSave} className="opacity-60 hover:opacity-100 transition-opacity text-sm" data-import-button title="Import save file">
+              📥 Import
             </button>
           </div>
         </div>
