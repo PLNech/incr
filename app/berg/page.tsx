@@ -33,6 +33,7 @@ import { QueueFormationSystem } from './core/systems/QueueFormationSystem';
 import { BouncerSystem, BouncerLogEntry } from './core/systems/BouncerSystem';
 import { FloorLayout, Floor, AreaID } from './core/map/FloorLayout';
 import { FloorRenderer } from './core/rendering/FloorRenderer';
+import { CoordinateSystem, GridCoordinates } from './core/utils/CoordinateSystem';
 
 // Initial game state
 const createInitialGameState = (): BergGameState => ({
@@ -164,6 +165,7 @@ export default function BergIncPage() {
   const lastRenderRef = useRef<number>(Date.now());
   const gameLoopIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const canvasNeedsRedrawRef = useRef<boolean>(true);
+  const coordinateSystemRef = useRef<CoordinateSystem | null>(null);
 
   // Initialize audio manager
   useEffect(() => {
@@ -537,6 +539,13 @@ export default function BergIncPage() {
         // Update canvas style to ensure proper display
         canvas.style.width = targetWidth + 'px';
         canvas.style.height = targetHeight + 'px';
+        
+        // Initialize or update coordinate system
+        if (!coordinateSystemRef.current) {
+          coordinateSystemRef.current = new CoordinateSystem(targetWidth, targetHeight);
+        } else {
+          coordinateSystemRef.current.updateCanvasDimensions(targetWidth, targetHeight);
+        }
       }
     };
 
@@ -545,7 +554,7 @@ export default function BergIncPage() {
 
     // Spawn agents if below capacity
     const spawnAgents = () => {
-      if (!gameState || !floorLayoutRef.current || !pathfindingRef.current || !floorRendererRef.current) return;
+      if (!gameState || !floorLayoutRef.current || !pathfindingRef.current || !floorRendererRef.current || !coordinateSystemRef.current) return;
       if (agentsRef.current.length >= gameState.maxClubbers) return;
 
       while (agentsRef.current.length < Math.min(gameState.maxClubbers, gameState.capacity)) {
@@ -558,16 +567,18 @@ export default function BergIncPage() {
         const entranceArea = floorLayoutRef.current.getArea(AreaID.ENTRANCE);
         if (!entranceArea) return;
         
-        // Convert grid coordinates to canvas coordinates
+        // Use proper grid coordinates (0-49, 0-44)
         const gridX = entranceArea.bounds.x + Math.floor(Math.random() * entranceArea.bounds.width);
         const gridY = entranceArea.bounds.y + Math.floor(Math.random() * entranceArea.bounds.height);
-        const startX = (gridX / 50) * canvas.width; // 50 is FLOOR_WIDTH
-        const startY = (gridY / 45) * canvas.height; // 45 is FLOOR_HEIGHT
+        
+        // Add small random variation within the grid cell
+        const finalGridX = Math.max(0, Math.min(49, gridX + (Math.random() - 0.5) * 0.8));
+        const finalGridY = Math.max(0, Math.min(44, gridY + (Math.random() - 0.5) * 0.8));
         
         const agent = new Agent(
           `agent-${Date.now()}-${Math.random()}`,
-          startX + (Math.random() - 0.5) * 40, // Slight variation around entrance
-          startY + (Math.random() - 0.5) * 20,
+          finalGridX, // Use grid coordinates directly
+          finalGridY,
           {
             type: agentType,
             stamina: 80 + Math.random() * 20,
@@ -679,9 +690,14 @@ export default function BergIncPage() {
             for (let i = 0; i < group.size; i++) {
               const isGuestList = Math.random() < 0.1;
               
+              // Position visitors outside the club in queue area (grid coordinates)
+              const queueGridX = 25 + (Math.random() - 0.5) * 4; // Around queue area
+              const queueGridY = 40 + Math.random() * 4; // Outside entrance
+              
               const agent = new Agent(
                 `visitor-${Date.now()}-${Math.random()}`,
-                35, 35,
+                Math.max(0, Math.min(49, queueGridX)), // Clamp to grid bounds
+                Math.max(0, Math.min(44, queueGridY)),
                 {
                   type: group.type as AgentType,
                   stamina: 80 + Math.random() * 20,
@@ -839,54 +855,72 @@ export default function BergIncPage() {
       
       // Only redraw if needed and limit to 30fps max
       if (canvasNeedsRedrawRef.current || timeSinceLastRender > 33) {
-        // Clear and redraw
-        floorRendererRef.current.render(gameState.tier);
+        // Clear and redraw  
+        floorRendererRef.current.render(gameState.tier, currentFloor);
         
-        // Draw agents (only those on current floor)
-        const currentFloor = floorRendererRef.current?.getCurrentFloor() || Floor.FIRST;
-        agentsRef.current.forEach(agent => {
-          if (agent.getFloor() !== currentFloor) return;
-          
-          let color: string;
-          if (agent.isGuestList) {
-            const vipColors = ['#9932cc', '#8a2be2'];
-            const vipIndex = vipAgentsRef.current.indexOf(agent);
-            color = vipColors[vipIndex] || '#9932cc';
-          } else {
-            const tierColors = CROWD_COLORS[gameState.tier];
-            color = tierColors[Math.floor(Math.random() * tierColors.length)];
-          }
-          
-          ctx.fillStyle = color;
-          
-          if (gameState.tier <= 1) {
-            ctx.shadowColor = color;
-            ctx.shadowBlur = 4;
-          } else if (gameState.tier >= 4) {
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 2;
-          } else {
+        // Draw agents (current floor + queue agents which are always visible)
+        const currentFloorForRendering = currentFloor;
+        const coordinateSystem = coordinateSystemRef.current;
+        
+        if (coordinateSystem) {
+          agentsRef.current.forEach(agent => {
+            // Always render queue agents (they're outside) or agents on current floor
+            const isQueueAgent = bouncerSystemRef.current?.isInQueue(agent.id) || false;
+            const shouldRender = isQueueAgent || agent.getFloor() === currentFloorForRendering;
+            
+            if (!shouldRender) return;
+            
+            // Convert grid coordinates to canvas coordinates
+            const canvasPos = coordinateSystem.gridToCanvas({ x: agent.x, y: agent.y });
+            
+            let color: string;
+            if (agent.isGuestList) {
+              const vipColors = ['#9932cc', '#8a2be2'];
+              const vipIndex = vipAgentsRef.current.indexOf(agent);
+              color = vipColors[vipIndex] || '#9932cc';
+            } else {
+              const tierColors = CROWD_COLORS[gameState.tier];
+              color = tierColors[Math.floor(Math.random() * tierColors.length)];
+            }
+            
+            ctx.fillStyle = color;
+            
+            if (gameState.tier <= 1) {
+              ctx.shadowColor = color;
+              ctx.shadowBlur = 4;
+            } else if (gameState.tier >= 4) {
+              ctx.shadowColor = '#ffffff';
+              ctx.shadowBlur = 2;
+            } else {
+              ctx.shadowBlur = 0;
+            }
+            
+            ctx.beginPath();
+            const radius = gameState.tier <= 1 ? 3 : gameState.tier <= 3 ? 3.5 : 4;
+            ctx.arc(canvasPos.x, canvasPos.y, radius, 0, 2 * Math.PI);
+            ctx.fill();
             ctx.shadowBlur = 0;
-          }
-          
-          ctx.beginPath();
-          const radius = gameState.tier <= 1 ? 3 : gameState.tier <= 3 ? 3.5 : 4;
-          ctx.arc(agent.x, agent.y, radius, 0, 2 * Math.PI);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-        });
+            
+            // VIP crown for guest list members
+            if (agent.isGuestList) {
+              ctx.fillStyle = '#FFD700';
+              ctx.font = '12px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText('👑', canvasPos.x, canvasPos.y - 8);
+            }
+          });
+        }
         
-        // Draw bouncer
-        if (bouncerSystemRef.current) {
+        // Draw bouncer (always visible - he's outside)
+        if (bouncerSystemRef.current && coordinateSystem) {
           const bouncer = bouncerSystemRef.current.getBouncerPosition();
-          const bouncerCanvasX = (bouncer.x / 50) * canvas.width;
-          const bouncerCanvasY = (bouncer.y / 45) * canvas.height;
+          const bouncerCanvasPos = coordinateSystem.gridToCanvas({ x: bouncer.x, y: bouncer.y });
           
           ctx.fillStyle = '#ff0000';
           ctx.shadowColor = '#ff0000';
           ctx.shadowBlur = 8;
           ctx.beginPath();
-          ctx.arc(bouncerCanvasX, bouncerCanvasY, bouncer.size * 3, 0, 2 * Math.PI);
+          ctx.arc(bouncerCanvasPos.x, bouncerCanvasPos.y, bouncer.size * 3, 0, 2 * Math.PI);
           ctx.fill();
           ctx.shadowBlur = 0;
         }
@@ -947,20 +981,30 @@ export default function BergIncPage() {
       setMousePos({ x: e.clientX, y: e.clientY });
       
       // Check if mouse is over any agent
-      const currentFloor = floorRendererRef.current?.getCurrentFloor() || Floor.FIRST;
+      const currentFloorForHover = currentFloor;
+      const coordinateSystem = coordinateSystemRef.current;
       let foundAgent: Agent | null = null;
       
-      for (const agent of agentsRef.current) {
-        if (agent.getFloor() !== currentFloor) continue;
-        
-        const agentRadius = 8; // Agent visual radius
-        const distance = Math.sqrt(
-          Math.pow(mouseX - agent.x, 2) + Math.pow(mouseY - agent.y, 2)
-        );
-        
-        if (distance <= agentRadius) {
-          foundAgent = agent;
-          break;
+      if (coordinateSystem) {
+        for (const agent of agentsRef.current) {
+          // Check queue agents (always visible) or agents on current floor
+          const isQueueAgent = bouncerSystemRef.current?.isInQueue(agent.id) || false;
+          const shouldCheck = isQueueAgent || agent.getFloor() === currentFloorForHover;
+          
+          if (!shouldCheck) continue;
+          
+          // Convert agent grid position to canvas position
+          const agentCanvasPos = coordinateSystem.gridToCanvas({ x: agent.x, y: agent.y });
+          
+          const agentRadius = 8; // Agent visual radius
+          const distance = Math.sqrt(
+            Math.pow(mouseX - agentCanvasPos.x, 2) + Math.pow(mouseY - agentCanvasPos.y, 2)
+          );
+          
+          if (distance <= agentRadius) {
+            foundAgent = agent;
+            break;
+          }
         }
       }
       
@@ -1052,9 +1096,14 @@ export default function BergIncPage() {
         for (let i = 0; i < group.size; i++) {
           const isGuestList = Math.random() < 0.05; // Lower chance for initial visitors
           
+          // Position initial visitors in queue area (grid coordinates)
+          const queueGridX = 25 + (Math.random() - 0.5) * 4; // Around queue area
+          const queueGridY = 40 + Math.random() * 4; // Outside entrance
+          
           const agent = new Agent(
             `initial-${Date.now()}-${Math.random()}`,
-            35, 35,
+            Math.max(0, Math.min(49, queueGridX)), // Clamp to grid bounds
+            Math.max(0, Math.min(44, queueGridY)),
             {
               type: group.type as AgentType,
               stamina: 80 + Math.random() * 20,

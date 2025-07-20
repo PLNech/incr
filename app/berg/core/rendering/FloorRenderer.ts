@@ -85,7 +85,9 @@ export class FloorRenderer {
     this.options = { ...this.options, ...options };
   }
   
-  public render(tier: number): void {
+  public render(tier: number, currentFloor?: Floor): void {
+    const floorToRender = currentFloor !== undefined ? currentFloor : this.currentFloor;
+    
     this.ctx.fillStyle = '#000000';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     
@@ -94,12 +96,12 @@ export class FloorRenderer {
     this.ctx.translate(-this.cameraX, -this.cameraY);
     this.ctx.scale(this.cameraScale, this.cameraScale);
     
-    // Render current floor
-    this.renderFloor(this.currentFloor, tier);
+    // Render specified floor
+    this.renderFloor(floorToRender, tier);
     
     // Render area labels if enabled
     if (this.options.showAreaLabels) {
-      this.renderAreaLabels(this.currentFloor);
+      this.renderAreaLabels(floorToRender);
     }
     
     this.ctx.restore();
