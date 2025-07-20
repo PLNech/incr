@@ -188,8 +188,8 @@ export class QueueFormationSystem {
   }
 
   private updateQueueDynamics(deltaTime: number): void {
-    for (const [agentId, position] of this.queuePositions.entries()) {
-      if (!position.agent) continue;
+    this.queuePositions.forEach((position, agentId) => {
+      if (!position.agent) return;
 
       // Update mood based on waiting time and observations
       this.updateAgentMood(position, deltaTime);
@@ -198,7 +198,7 @@ export class QueueFormationSystem {
       if (this.shouldLeaveQueue(position, deltaTime)) {
         this.removeAgentFromQueue(agentId, 'impatience');
       }
-    }
+    });
 
     // Update positions in queue
     this.reorderQueue();
@@ -447,8 +447,8 @@ export class QueueFormationSystem {
   private getWitnessAgents(rejectedAgent: Agent, radius: number): Agent[] {
     const witnesses: Agent[] = [];
     
-    for (const [_, position] of this.queuePositions.entries()) {
-      if (position.agent.id === rejectedAgent.id) continue;
+    this.queuePositions.forEach((position, _) => {
+      if (position.agent.id === rejectedAgent.id) return;
       
       const distance = Math.sqrt(
         Math.pow(position.agent.x - rejectedAgent.x, 2) + 
@@ -458,13 +458,13 @@ export class QueueFormationSystem {
       if (distance <= radius) {
         witnesses.push(position.agent);
       }
-    }
+    });
     
     return witnesses;
   }
 
   private influenceNearbyAgentsPositively(successfulAgent: Agent): void {
-    for (const [_, position] of this.queuePositions.entries()) {
+    this.queuePositions.forEach((position, _) => {
       const distance = Math.sqrt(
         Math.pow(position.agent.x - successfulAgent.x, 2) + 
         Math.pow(position.agent.y - successfulAgent.y, 2)
@@ -474,7 +474,7 @@ export class QueueFormationSystem {
         position.confidence = Math.min(90, position.confidence + 5);
         if (position.mood === 'nervous') position.mood = 'hopeful';
       }
-    }
+    });
   }
 
   private influenceNearbyAgentsNegatively(rejectionEvent: RejectionEvent): void {
@@ -529,12 +529,13 @@ export class QueueFormationSystem {
   }
 
   private findAgentById(id: string): Agent | null {
-    for (const [_, position] of this.queuePositions.entries()) {
-      if (position.agent.id === id) {
-        return position.agent;
+    let foundAgent: Agent | null = null;
+    this.queuePositions.forEach((position, _) => {
+      if (position.agent.id === id && !foundAgent) {
+        foundAgent = position.agent;
       }
-    }
-    return null;
+    });
+    return foundAgent;
   }
 
   // Public interface methods

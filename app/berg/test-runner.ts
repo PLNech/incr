@@ -1,9 +1,10 @@
 // BergInc Autonomous Test Suite
 // Run with: node -r ts-node/register app/berg/test-runner.ts
 
-import { BergGameState, TIER_THRESHOLDS, VISUAL_THEMES, CROWD_COLORS } from './types';
-import { BERG_QUOTES, getRandomQuoteForTier } from './quotes';
-import { BergAudioManager } from './audio';
+import { BergGameState, TIER_THRESHOLDS, VISUAL_THEMES, CROWD_COLORS } from './types.js';
+import { BERG_QUOTES, getRandomQuoteForTier } from './quotes.js';
+import { BergAudioManager } from './audio.js';
+import PathfindingTestSuite from './core/map/PathfindingSystem.test.js';
 
 interface TestResult {
   name: string;
@@ -422,6 +423,11 @@ class BergTestSuite {
     
     // Integration Tests
     this.testGameStateIntegration();
+
+    // Pathfinding Tests
+    console.log('\n🗺️ Running PathfindingSystem Tests...\n');
+    const pathfindingTestSuite = new PathfindingTestSuite();
+    pathfindingTestSuite.runAllTests();
 
     // Summary
     const passed = this.results.filter(r => r.passed).length;

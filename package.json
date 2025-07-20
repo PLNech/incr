@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "lint": "next lint",
     "export": "next build && next export",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:e2e": "playwright test",
     "test:berg": "npx ts-node --esm app/berg/test-runner.ts"
   },
   "dependencies": {
@@ -15,14 +19,19 @@
     "react-dom": "18.2.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.1",
+    "@types/jest": "^29.5.14",
     "@types/node": "20.8.0",
     "@types/react": "18.2.0",
     "@types/react-dom": "18.2.0",
     "autoprefixer": "10.4.16",
     "eslint": "8.50.0",
     "eslint-config-next": "14.0.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "postcss": "8.4.31",
     "tailwindcss": "3.3.5",
+    "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.2.2"
   }

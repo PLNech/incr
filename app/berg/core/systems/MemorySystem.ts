@@ -267,7 +267,7 @@ export class MemorySystem {
     const locationStats = new Map<string, LocationPreference>();
     
     // Get all unique locations from memories
-    const uniqueLocations = [...new Set(this.locationMemories.map(m => m.location))];
+    const uniqueLocations = Array.from(new Set(this.locationMemories.map(m => m.location)));
     
     for (const location of uniqueLocations) {
       const preference = this.getLocationPreference(location);
@@ -305,14 +305,14 @@ export class MemorySystem {
 
     const trusted: string[] = [];
 
-    for (const [agentId, memories] of relationships.entries()) {
+    relationships.forEach((memories, agentId) => {
       const relationship = this.getAgentRelationship(agentId);
       if (relationship && 
           relationship.relationshipStrength > 75 && 
           relationship.interactionCount >= 3) {
         trusted.push(agentId);
       }
-    }
+    });
 
     return { trusted };
   }

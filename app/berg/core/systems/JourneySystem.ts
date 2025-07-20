@@ -133,9 +133,9 @@ export class JourneySystem {
   private initializeLocationPreferences(): void {
     // Initialize with agent type-based preferences
     const basePreferences = this.getAgentTypePreferences(this.agent.type);
-    for (const [location, preference] of basePreferences) {
+    basePreferences.forEach((preference, location) => {
       this.locationPreferences.set(location, preference);
-    }
+    });
   }
 
   private getAgentTypePreferences(agentType: AgentType): Map<string, number> {

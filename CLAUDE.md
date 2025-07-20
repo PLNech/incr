@@ -110,9 +110,44 @@ components/             # Reusable UI components
 - **Static Generation**: Optimized builds with Next.js export
 - **Lazy Loading**: Components load only when needed
 
+## Testing Requirements
+
+### Test-Driven Development (TDD)
+- **ALWAYS write tests first** before implementing features
+- **Unit tests** for all game logic and utility functions
+- **Integration tests** for component interactions
+- **End-to-end tests** for user workflows using Playwright
+- **Run tests frequently** during development - test early, test often
+- **Test all edge cases** and error conditions
+- **Ensure tests pass** before committing any code
+
+### Testing Commands
+- `npm run test` - Run all unit tests
+- `npm run test:e2e` - Run Playwright end-to-end tests
+- `npm run test:watch` - Run tests in watch mode during development
+- **CRITICAL**: Tests must pass before any deployment or feature completion
+
+### Testing Strategy
+- **Red-Green-Refactor cycle**: Write failing test → Make it pass → Improve code
+- **Test coverage**: Aim for 80%+ coverage on core game logic
+- **Real user scenarios**: E2E tests should simulate actual gameplay
+- **Performance testing**: Verify games run smoothly under load
+- **Cross-browser testing**: Ensure compatibility across browsers
+
+### BergInc Testing Focus
+- **Revenue progression**: Verify money increases over time
+- **UI interactions**: Test all buttons, modals, and navigation
+- **Multi-floor system**: Ensure agents move between floors correctly
+- **Queue mechanics**: Test queue formation and entry rejection
+- **Area unlocking**: Verify areas unlock at correct tiers
+- **Audio/visual effects**: Test theme changes and animations
+
 ## Next Steps for BERG Project
 The README indicates the next major project is "Le BergInc" - a Berghain-themed incremental game. When implementing:
+- **Write tests first** using TDD methodology
 - Follow the same modular game architecture
 - Create new directory `app/berg/` 
 - Add game logic in `lib/bergTypes.ts` and `lib/bergUtils.ts`
 - Use the cross-game state system for unlock mechanics
+- **Test everything** - unit tests, integration tests, E2E tests
+- **Verify test coverage** before considering features complete

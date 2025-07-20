@@ -186,21 +186,22 @@ export class SocialGroup {
   }
 
   public getLeader(): string | null {
-    for (const [agentId, role] of this.members.entries()) {
-      if (role === GroupRole.LEADER) {
-        return agentId;
+    let leader: string | null = null;
+    this.members.forEach((role, agentId) => {
+      if (role === GroupRole.LEADER && !leader) {
+        leader = agentId;
       }
-    }
-    return null;
+    });
+    return leader;
   }
 
   public getFollowers(): string[] {
     const followers: string[] = [];
-    for (const [agentId, role] of this.members.entries()) {
+    this.members.forEach((role, agentId) => {
       if (role === GroupRole.FOLLOWER) {
         followers.push(agentId);
       }
-    }
+    });
     return followers;
   }
 
@@ -294,9 +295,9 @@ export class SocialSystem {
     this.agents.delete(agentId);
     
     // Remove from all groups
-    for (const group of this.groups.values()) {
+    this.groups.forEach((group) => {
       group.removeMember(agentId);
-    }
+    });
     
     // Remove relationships
     const toRemove = Array.from(this.relationships.keys()).filter(key => 
@@ -315,19 +316,19 @@ export class SocialSystem {
 
   public update(deltaTime: number): void {
     // Update all groups
-    for (const group of this.groups.values()) {
+    this.groups.forEach((group) => {
       group.update(deltaTime);
       
       // Remove dissolved groups
       if (group.shouldDissolve()) {
         this.removeGroup(group.id);
       }
-    }
+    });
     
     // Update relationships
-    for (const relationship of this.relationships.values()) {
+    this.relationships.forEach((relationship) => {
       relationship.decay(deltaTime);
-    }
+    });
     
     // Periodic group formation check
     const now = performance.now();
@@ -338,7 +339,11 @@ export class SocialSystem {
   }
 
   public checkForGroupFormation(): void {
-    const unGroupedAgents = Array.from(this.agents.values()).filter(agent => 
+    const agentsList: Agent[] = [];
+    this.agents.forEach((agent) => {
+      agentsList.push(agent);
+    });
+    const unGroupedAgents = agentsList.filter(agent => 
       this.getGroupsForAgent(agent.id).length === 0
     );
 
@@ -438,8 +443,8 @@ export class SocialSystem {
   public getAgentsInProximity(agent: Agent, radius: number): Agent[] {
     const nearby: Agent[] = [];
     
-    for (const other of this.agents.values()) {
-      if (other.id === agent.id) continue;
+    this.agents.forEach((other) => {
+      if (other.id === agent.id) return;
       
       const distance = Math.sqrt(
         Math.pow(other.x - agent.x, 2) + Math.pow(other.y - agent.y, 2)
@@ -448,7 +453,7 @@ export class SocialSystem {
       if (distance <= radius) {
         nearby.push(other);
       }
-    }
+    });
     
     return nearby;
   }
@@ -466,17 +471,21 @@ export class SocialSystem {
   public getGroupsForAgent(agentId: string): SocialGroup[] {
     const groups: SocialGroup[] = [];
     
-    for (const group of this.groups.values()) {
+    this.groups.forEach((group) => {
       if (group.hasMember(agentId)) {
         groups.push(group);
       }
-    }
+    });
     
     return groups;
   }
 
   public getAllGroups(): SocialGroup[] {
-    return Array.from(this.groups.values());
+    const groups: SocialGroup[] = [];
+    this.groups.forEach((group) => {
+      groups.push(group);
+    });
+    return groups;
   }
 
   public getGroupInfluenceOnDecision(agentId: string, decisionType: string): any {

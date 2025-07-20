@@ -17,6 +17,23 @@ import {
 import { BERG_QUOTES, getRandomQuoteForTier } from './quotes';
 import { BergAudioManager } from './audio';
 
+// Agent System Imports
+import { Agent, AgentType } from './core/agents/Agent';
+import { GridMap, TileType } from './core/map/GridMap';
+import { PathfindingSystem } from './core/map/PathfindingSystem';
+import { MemorySystem } from './core/systems/MemorySystem';
+import { VisitorArrivalSystem } from './core/systems/VisitorArrivalSystem';
+import { TimeSystem, KlubNachtTime } from './core/systems/TimeSystem';
+import { ReputationSystem } from './core/systems/ReputationSystem';
+import { NeedsSystem } from './core/systems/NeedsSystem';
+import { JourneySystem } from './core/systems/JourneySystem';
+import { SocialSystem } from './core/systems/SocialSystem';
+import { TransactionSystem } from './core/systems/TransactionSystem';
+import { QueueFormationSystem } from './core/systems/QueueFormationSystem';
+import { BouncerSystem, BouncerLogEntry } from './core/systems/BouncerSystem';
+import { FloorLayout, Floor, AreaID } from './core/map/FloorLayout';
+import { FloorRenderer } from './core/rendering/FloorRenderer';
+
 // Initial game state
 const createInitialGameState = (): BergGameState => ({
   tier: 0,
@@ -114,9 +131,39 @@ export default function BergIncPage() {
   const [gameState, setGameState] = useState<BergGameState | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [showManagement, setShowManagement] = useState(false);
+  const [currentTime, setCurrentTime] = useState<KlubNachtTime | null>(null);
+  const [hoveredAgent, setHoveredAgent] = useState<Agent | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const [currentFloor, setCurrentFloor] = useState<Floor>(Floor.FIRST);
+  const [showQueueLog, setShowQueueLog] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const audioManagerRef = useRef<BergAudioManager | null>(null);
+  
+  // Agent System Refs
+  const floorLayoutRef = useRef<FloorLayout | null>(null);
+  const floorRendererRef = useRef<FloorRenderer | null>(null);
+  const pathfindingRef = useRef<PathfindingSystem | null>(null);
+  const agentsRef = useRef<Agent[]>([]);
+  const memorySystemsRef = useRef<Map<string, MemorySystem>>(new Map());
+  const reputationSystemRef = useRef<ReputationSystem | null>(null);
+  const socialSystemRef = useRef<SocialSystem | null>(null);
+  const transactionSystemRef = useRef<TransactionSystem | null>(null);
+  const queueSystemRef = useRef<QueueFormationSystem | null>(null);
+  const bouncerSystemRef = useRef<BouncerSystem | null>(null);
+  const visitorArrivalSystemRef = useRef<VisitorArrivalSystem | null>(null);
+  const timeSystemRef = useRef<TimeSystem | null>(null);
+  const systemsInitializedRef = useRef<boolean>(false);
+  const vipAgentsRef = useRef<Agent[]>([]);
+  const agentLastUpdateRef = useRef<Map<string, number>>(new Map());
+  const lastVisitorCheckRef = useRef<number>(Date.now());
+  
+  // Performance optimization refs
+  const lastGameLoopRef = useRef<number>(Date.now());
+  const lastRenderRef = useRef<number>(Date.now());
+  const gameLoopIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const canvasNeedsRedrawRef = useRef<boolean>(true);
 
   // Initialize audio manager
   useEffect(() => {
@@ -127,6 +174,119 @@ export default function BergIncPage() {
       }
     };
   }, []);
+
+  // Initialize agent systems - runs when canvas becomes available
+  useEffect(() => {
+    if (!canvasRef.current || !gameState || systemsInitializedRef.current) {
+      return;
+    }
+    
+    try {
+      systemsInitializedRef.current = true;
+      
+      // Create multi-floor layout
+      const floorLayout = new FloorLayout();
+      floorLayoutRef.current = floorLayout;
+      
+      // Create floor renderer
+      floorRendererRef.current = new FloorRenderer(canvasRef.current, floorLayout);
+      
+      // Get current floor's grid map for pathfinding
+      const currentFloorPlan = floorLayout.getFloorPlan(Floor.GROUND);
+      if (!currentFloorPlan) {
+        console.error('❌ No floor plan found for Ground floor');
+        return;
+      }
+      
+      // Initialize systems
+      pathfindingRef.current = new PathfindingSystem(currentFloorPlan.gridMap);
+      reputationSystemRef.current = new ReputationSystem();
+      bouncerSystemRef.current = new BouncerSystem(reputationSystemRef.current);
+      socialSystemRef.current = new SocialSystem();
+      transactionSystemRef.current = new TransactionSystem();
+      visitorArrivalSystemRef.current = new VisitorArrivalSystem();
+      timeSystemRef.current = new TimeSystem();
+      
+      // Get entrance area for queue system
+      const entranceArea = floorLayout.getArea(AreaID.ENTRANCE);
+      if (entranceArea) {
+        const entranceX = entranceArea.bounds.x + Math.floor(entranceArea.bounds.width / 2);
+        const entranceY = entranceArea.bounds.y + Math.floor(entranceArea.bounds.height / 2);
+        queueSystemRef.current = new QueueFormationSystem(
+          transactionSystemRef.current,
+          socialSystemRef.current,
+          entranceX, entranceY
+        );
+      }
+      
+      // Create VIP regular agents - Josh and Francesca
+      // Position them properly inside the main dancefloor
+      const dancefloorArea = floorLayout.getArea(AreaID.BERGHAIN_DANCEFLOOR);
+      if (dancefloorArea) {
+        const vipData = [
+          { name: 'Josh', lastName: 'Morgan', origin: 'American' },
+          { name: 'Francesca', lastName: 'Dubois', origin: 'French' }
+        ];
+        
+        vipData.forEach((vip, i) => {
+          // Position VIPs in the dancefloor area with proper coordinate conversion
+          const gridX = dancefloorArea.bounds.x + 5 + (i * 3); // Spread them out a bit
+          const gridY = dancefloorArea.bounds.y + 5;
+          const canvasX = (gridX / 50) * canvasRef.current!.width; // Convert to canvas coordinates
+          const canvasY = (gridY / 45) * canvasRef.current!.height;
+          
+          const agent = new Agent(
+            `vip-regular-${vip.name.toLowerCase()}`,
+            canvasX,
+            canvasY,
+            {
+              type: 'regular' as AgentType,
+              stamina: 100,
+              socialEnergy: 100,
+              entertainment: 100,
+              customName: {
+                firstName: vip.name,
+                lastName: vip.lastName,
+                origin: vip.origin
+              }
+            }
+          );
+          agent.isGuestList = true;
+          agent.setFloor(dancefloorArea.floor); // Set them on the correct floor (First Floor)
+          
+          // Set pathfinder for VIPs too
+          if (pathfindingRef.current) {
+            agent.setPathfinder(pathfindingRef.current);
+          }
+          
+          vipAgentsRef.current.push(agent);
+          agentsRef.current.push(agent);
+        });
+      }
+      
+      // Set up Josh and Francesca as preferred partners
+      if (vipAgentsRef.current.length === 2) {
+        vipAgentsRef.current[0].preferredPartner = vipAgentsRef.current[1];
+        vipAgentsRef.current[1].preferredPartner = vipAgentsRef.current[0];
+      }
+      
+    } catch (error) {
+      console.error('❌ System initialization failed:', error);
+      console.error('Stack trace:', error.stack);
+      systemsInitializedRef.current = false; // Reset on error
+    }
+    
+    return () => {
+      // Cleanup agents
+      if (agentsRef.current) {
+        agentsRef.current.forEach(agent => agent.cleanup());
+        agentsRef.current = [];
+      }
+      memorySystemsRef.current.clear();
+      vipAgentsRef.current = [];
+      systemsInitializedRef.current = false; // Reset for next initialization
+    };
+  }, [gameState]); // Run when gameState becomes available
 
   // Load game state on mount
   useEffect(() => {
@@ -221,6 +381,23 @@ export default function BergIncPage() {
         // Update theme if tier changed
         const newTheme = newTier !== prevState.tier ? VISUAL_THEMES[newTier] : prevState.currentTheme;
         
+        // Unlock new areas if tier changed
+        if (newTier !== prevState.tier && floorLayoutRef.current && floorRendererRef.current) {
+          const areasToUnlock = floorLayoutRef.current.getAreasForTier(newTier);
+          areasToUnlock.forEach(areaId => {
+            if (floorLayoutRef.current!.unlockArea(areaId)) {
+              // Trigger reveal animation for newly unlocked area
+              floorRendererRef.current!.revealArea(areaId, 2000); // 2 second reveal animation
+              console.log(`🔓 Unlocked area: ${areaId} at tier ${newTier}`);
+            }
+          });
+          
+          // Zoom out slightly to reveal more of the map when new areas unlock
+          if (areasToUnlock.length > 0) {
+            floorRendererRef.current.zoomOut(0.9);
+          }
+        }
+        
         // Update quotes if tier changed
         let newUnlockedQuotes = prevState.unlockedQuotes;
         let newCurrentQuote = prevState.currentQuote;
@@ -286,173 +463,374 @@ export default function BergIncPage() {
       const container = canvas.parentElement;
       if (container) {
         const rect = container.getBoundingClientRect();
-        canvas.width = Math.min(400, rect.width - 20);
-        canvas.height = Math.min(300, (canvas.width * 3) / 4);
+        const targetWidth = Math.min(1200, rect.width - 40);
+        const targetHeight = Math.min(800, targetWidth * 0.6);
+        
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        
+        // Update canvas style to ensure proper display
+        canvas.style.width = targetWidth + 'px';
+        canvas.style.height = targetHeight + 'px';
       }
     };
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Spawn clubbers if below capacity
-    const spawnClubbers = () => {
-      setGameState(prevState => {
-        if (!prevState || prevState.clubbers.length >= prevState.maxClubbers) return prevState;
+    // Spawn agents if below capacity
+    const spawnAgents = () => {
+      if (!gameState || !floorLayoutRef.current || !pathfindingRef.current || !floorRendererRef.current) return;
+      if (agentsRef.current.length >= gameState.maxClubbers) return;
 
-        const newClubbers = [...prevState.clubbers];
-        while (newClubbers.length < Math.min(prevState.maxClubbers, prevState.capacity)) {
-          const tierColors = CROWD_COLORS[prevState.tier];
-          newClubbers.push({
-            id: `clubber-${Date.now()}-${Math.random()}`,
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            targetX: Math.random() * canvas.width,
-            targetY: Math.random() * canvas.height,
-            color: tierColors[Math.floor(Math.random() * tierColors.length)],
-            type: prevState.tier <= 1 ? 'authentic' : prevState.tier <= 3 ? 'curious' : 'tourist',
-            currentSpace: 'dancefloor',
-            journey: ['entrance', 'dancefloor', 'bar', 'toilets', 'exit'] as JourneyStep[],
-            journeyStep: 1, // Start at dancefloor
-            spentMoney: 0,
-            entryFee: prevState.tier < 6 ? [5, 8, 12, 18, 25, 30][prevState.tier] : 30,
-            timeInClub: 0,
-            stamina: Math.random() * 50 + 50, // Start with 50-100% stamina
-            tiredness: 0,
-            speed: prevState.tier <= 1 ? 0.5 : prevState.tier <= 3 ? 1.5 : 3,
-            pauseTime: prevState.tier <= 1 ? 3000 : prevState.tier <= 3 ? 1500 : 500,
-            lastMoved: Date.now(),
-            movementPattern: prevState.tier <= 1 ? 'organic' : prevState.tier <= 3 ? 'erratic' : 'performative'
-          });
+      while (agentsRef.current.length < Math.min(gameState.maxClubbers, gameState.capacity)) {
+        const agentType: AgentType = gameState.tier <= 1 ? 'authentic' : 
+                                   gameState.tier <= 2 ? 'regular' :
+                                   gameState.tier <= 3 ? 'curious' : 
+                                   gameState.tier <= 4 ? 'tourist' : 'influencer';
+        
+        // Get entrance area from floor layout
+        const entranceArea = floorLayoutRef.current.getArea(AreaID.ENTRANCE);
+        if (!entranceArea) return;
+        
+        // Convert grid coordinates to canvas coordinates
+        const gridX = entranceArea.bounds.x + Math.floor(Math.random() * entranceArea.bounds.width);
+        const gridY = entranceArea.bounds.y + Math.floor(Math.random() * entranceArea.bounds.height);
+        const startX = (gridX / 50) * canvas.width; // 50 is FLOOR_WIDTH
+        const startY = (gridY / 45) * canvas.height; // 45 is FLOOR_HEIGHT
+        
+        const agent = new Agent(
+          `agent-${Date.now()}-${Math.random()}`,
+          startX + (Math.random() - 0.5) * 40, // Slight variation around entrance
+          startY + (Math.random() - 0.5) * 20,
+          {
+            type: agentType,
+            stamina: 80 + Math.random() * 20,
+            socialEnergy: 60 + Math.random() * 40,
+            entertainment: 50 + Math.random() * 50
+          }
+        );
+        
+        // Set initial floor based on entrance area (Ground Floor = 0)
+        agent.setFloor(entranceArea.floor);
+        
+        // Initialize agent systems
+        const memorySystem = new MemorySystem(agent);
+        memorySystemsRef.current.set(agent.id, memorySystem);
+        
+        // Set up agent pathfinding
+        if (pathfindingRef.current) {
+          agent.setPathfinder(pathfindingRef.current);
         }
+        
+        // Initialize agent reputation
+        if (reputationSystemRef.current) {
+          reputationSystemRef.current.getAgentReputation(agent.id);
+        }
+        
+        agentsRef.current.push(agent);
+      }
 
-        return { ...prevState, clubbers: newClubbers };
+      // Update gameState with agent-derived clubbers for stats display
+      setGameState(prevState => {
+        if (!prevState) return null;
+        
+        const clubbers = agentsRef.current.map(agent => ({
+          id: agent.id,
+          x: agent.x,
+          y: agent.y,
+          targetX: agent.x,
+          targetY: agent.y,
+          color: CROWD_COLORS[prevState.tier][Math.floor(Math.random() * CROWD_COLORS[prevState.tier].length)],
+          type: agent.type === 'regular' ? 'authentic' : agent.type as 'authentic' | 'curious' | 'tourist' | 'influencer' | 'corporate',
+          currentSpace: 'dancefloor',
+          journey: ['entrance', 'dancefloor', 'bar', 'toilets', 'exit'] as JourneyStep[],
+          journeyStep: 1,
+          spentMoney: 0,
+          entryFee: prevState.tier < 6 ? [5, 8, 12, 18, 25, 30][prevState.tier] : 30,
+          timeInClub: 0,
+          stamina: agent.stamina,
+          tiredness: 100 - agent.stamina,
+          speed: prevState.tier <= 1 ? 0.5 : prevState.tier <= 3 ? 1.5 : 3,
+          pauseTime: prevState.tier <= 1 ? 3000 : prevState.tier <= 3 ? 1500 : 500,
+          lastMoved: Date.now(),
+          movementPattern: prevState.tier <= 1 ? 'organic' as const : prevState.tier <= 3 ? 'erratic' as const : 'performative' as const
+        }));
+        
+        return { ...prevState, clubbers };
       });
     };
 
-    // Animation loop for crowd simulation
-    const animate = () => {
-      if (!ctx || !gameState) return;
-
-      ctx.fillStyle = gameState.currentTheme?.backgroundColor || '#0a0a0a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Draw clubbers
-      gameState.clubbers.forEach(clubber => {
-        const now = Date.now();
+    // PERFORMANCE OPTIMIZED: Separate game logic from rendering
+    
+    // Game Logic Loop - runs at 20fps for heavy computation
+    const gameLogicLoop = () => {
+      if (!gameState || !pathfindingRef.current || !floorRendererRef.current) return;
+      
+      const now = Date.now();
+      const deltaTime = now - lastGameLoopRef.current;
+      lastGameLoopRef.current = now;
+      
+      // Update bouncer system
+      if (bouncerSystemRef.current) {
+        bouncerSystemRef.current.update(deltaTime);
+        bouncerSystemRef.current.setTier(gameState.tier);
+      }
+      
+      // Check for new visitor arrivals (every 2 seconds)
+      if (now - lastVisitorCheckRef.current > 2000 && visitorArrivalSystemRef.current) {
+        const dayOfWeek = new Date().getDay();
+        const hour = new Date().getHours();
+        const lineup = 10 + Math.floor(Math.random() * 11);
         
-        // Movement logic based on tier and pattern
-        if (now - clubber.lastMoved > clubber.pauseTime) {
-          const dx = clubber.targetX - clubber.x;
-          const dy = clubber.targetY - clubber.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < 5) {
-            // Reached target, choose new one based on tier
-            if (gameState.tier <= 1) {
-              // COLLECTIVE TRANCE: Move as a unified organism
-              const others = gameState.clubbers.filter(c => c.id !== clubber.id);
-              if (others.length > 0 && Math.random() < 0.9) {
-                // Follow the crowd - move near center of mass
-                const centerX = others.reduce((sum, c) => sum + c.x, 0) / others.length;
-                const centerY = others.reduce((sum, c) => sum + c.y, 0) / others.length;
-                clubber.targetX = centerX + (Math.random() - 0.5) * 60;
-                clubber.targetY = centerY + (Math.random() - 0.5) * 60;
-              } else {
-                // Occasional individual exploration
-                clubber.targetX = Math.random() * canvas.width;
-                clubber.targetY = Math.random() * canvas.height;
-              }
-            } else if (gameState.tier <= 2) {
-              // MIXED: Some collective, some individual
-              const others = gameState.clubbers.filter(c => c.id !== clubber.id);
-              if (others.length > 0 && Math.random() < 0.5) {
-                const target = others[Math.floor(Math.random() * others.length)];
-                clubber.targetX = target.x + (Math.random() - 0.5) * 120;
-                clubber.targetY = target.y + (Math.random() - 0.5) * 120;
-              } else {
-                clubber.targetX = Math.random() * canvas.width;
-                clubber.targetY = Math.random() * canvas.height;
-              }
-            } else if (gameState.tier <= 3) {
-              // TOURIST ERA: Erratic, photo-spot seeking
-              if (Math.random() < 0.3) {
-                // Move to "photo spots" (corners and edges)
-                const spots = [
-                  { x: 50, y: 50 }, { x: canvas.width - 50, y: 50 },
-                  { x: 50, y: canvas.height - 50 }, { x: canvas.width - 50, y: canvas.height - 50 },
-                  { x: canvas.width / 2, y: 50 }
-                ];
-                const spot = spots[Math.floor(Math.random() * spots.length)];
-                clubber.targetX = spot.x + (Math.random() - 0.5) * 40;
-                clubber.targetY = spot.y + (Math.random() - 0.5) * 40;
-              } else {
-                clubber.targetX = Math.random() * canvas.width;
-                clubber.targetY = Math.random() * canvas.height;
-              }
-            } else {
-              // PERFORMATIVE: Isolated, lone trajectories
-              // Each person is in their own bubble
-              clubber.targetX = Math.random() * canvas.width;
-              clubber.targetY = Math.random() * canvas.height;
+        const arrivalFactors = {
+          dayOfWeek: dayOfWeek === 0 ? 6 : dayOfWeek - 1,
+          hourOfNight: hour >= 22 ? hour - 22 : hour + 2,
+          currentOccupancy: agentsRef.current.length,
+          maxCapacity: gameState.capacity,
+          lineupQuality: lineup,
+          tier: gameState.tier
+        };
+        
+        const newArrivals = visitorArrivalSystemRef.current.generateArrivals(arrivalFactors, deltaTime);
+        
+        // Convert visitor groups to agents and add to bouncer queue
+        if (bouncerSystemRef.current && newArrivals.length > 0) {
+          let totalNewArrivals = 0;
+          
+          newArrivals.forEach(group => {
+            for (let i = 0; i < group.size; i++) {
+              const isGuestList = Math.random() < 0.1;
               
-              // Avoid others - individualistic behavior
-              const others = gameState.clubbers.filter(c => c.id !== clubber.id);
-              others.forEach(other => {
-                const otherDx = other.x - clubber.targetX;
-                const otherDy = other.y - clubber.targetY;
-                const otherDistance = Math.sqrt(otherDx * otherDx + otherDy * otherDy);
-                if (otherDistance < 50) {
-                  // Move away from others
-                  clubber.targetX -= (otherDx / otherDistance) * 30;
-                  clubber.targetY -= (otherDy / otherDistance) * 30;
+              const agent = new Agent(
+                `visitor-${Date.now()}-${Math.random()}`,
+                35, 35,
+                {
+                  type: group.type as AgentType,
+                  stamina: 80 + Math.random() * 20,
+                  socialEnergy: 60 + Math.random() * 40,
+                  entertainment: 50 + Math.random() * 50
                 }
-              });
+              );
+              
+              agent.isGuestList = isGuestList;
+              agent.setFloor(Floor.GROUND);
+              
+              // Initialize systems
+              const memorySystem = new MemorySystem(agent);
+              memorySystemsRef.current.set(agent.id, memorySystem);
+              
+              if (pathfindingRef.current) {
+                agent.setPathfinder(pathfindingRef.current);
+              }
+              
+              if (reputationSystemRef.current) {
+                reputationSystemRef.current.getAgentReputation(agent.id);
+              }
+              
+              if (bouncerSystemRef.current.addToQueue(agent)) {
+                agentsRef.current.push(agent);
+                totalNewArrivals++;
+              }
             }
-          } else {
-            // Move towards target
-            let moveX = (dx / distance) * clubber.speed;
-            let moveY = (dy / distance) * clubber.speed;
-            
-            // Add synchronization effect for early tiers
-            if (gameState.tier <= 1) {
-              // Add subtle wave motion for collective trance
-              const waveTime = Date.now() / 2000;
-              moveX += Math.sin(waveTime + clubber.x * 0.01) * 0.1;
-              moveY += Math.cos(waveTime + clubber.y * 0.01) * 0.1;
-            }
-            
-            clubber.x += moveX;
-            clubber.y += moveY;
+          });
+          
+          if (totalNewArrivals > 0) {
+            console.log(`🚶 ${totalNewArrivals} new visitors joined queue`);
+            canvasNeedsRedrawRef.current = true;
+          }
+        }
+        
+        lastVisitorCheckRef.current = now;
+      }
+      
+      // Batch agent updates - only update a subset each frame for performance
+      const AGENTS_PER_FRAME = Math.max(1, Math.ceil(agentsRef.current.length / 4));
+      const startIndex = (Math.floor(now / 50) * AGENTS_PER_FRAME) % agentsRef.current.length;
+      
+      for (let i = 0; i < AGENTS_PER_FRAME && i + startIndex < agentsRef.current.length; i++) {
+        const agent = agentsRef.current[i + startIndex];
+        
+        // Check if agent is in queue - different behavior for queue vs inside club
+        const isInQueue = bouncerSystemRef.current?.isInQueue(agent.id) || false;
+        
+        if (isInQueue) {
+          // Queue agents: minimal behavior, stay in position
+          agent.update(deltaTime); // Just basic movement toward queue position
+        } else {
+          // Club agents: full AI behavior
+          // Simple needs decay
+          agent.stamina = Math.max(0, agent.stamina - (deltaTime / 10000));
+          agent.entertainment = Math.max(0, agent.entertainment - (deltaTime / 8000));
+          agent.socialEnergy = Math.max(0, agent.socialEnergy - (deltaTime / 12000));
+          
+          // Agent AI update - only every 2 seconds per agent
+          const lastUpdate = agentLastUpdateRef.current.get(agent.id) || 0;
+          if (now - lastUpdate > 2000) {
+            updateAgentAI(agent, gameState, canvas);
+            agentLastUpdateRef.current.set(agent.id, now);
+            canvasNeedsRedrawRef.current = true;
           }
           
-          clubber.lastMoved = now;
+          // Update agent movement (lightweight)
+          agent.update(deltaTime);
         }
-
-        // Draw clubber with subtle glow effect for early tiers
-        ctx.fillStyle = clubber.color;
-        if (gameState.tier <= 1) {
-          // Add subtle glow for collective trance
-          ctx.shadowColor = clubber.color;
-          ctx.shadowBlur = 4;
+      }
+    };
+    
+    // Optimized agent AI update function
+    const updateAgentAI = (agent: Agent, gameState: BergGameState, canvas: HTMLCanvasElement) => {
+      if (!floorLayoutRef.current) return;
+      
+      let targetLocation = 'dancefloor';
+      
+      if (agent.stamina < 30) {
+        targetLocation = 'toilets';
+      } else if (agent.entertainment < 40) {
+        targetLocation = 'dancefloor';
+      } else if (agent.socialEnergy < 50 && Math.random() < 0.6) {
+        targetLocation = 'bar';
+      }
+      
+      let targetArea: AreaID = AreaID.BERGHAIN_DANCEFLOOR;
+      
+      switch (targetLocation) {
+        case 'bar':
+          if (gameState.tier >= 2 && floorLayoutRef.current.getArea(AreaID.PANORAMA_BAR)?.isUnlocked) {
+            targetArea = AreaID.PANORAMA_BAR;
+          } else if (gameState.tier >= 1 && floorLayoutRef.current.getArea(AreaID.BAR_MEZZANINE)?.isUnlocked) {
+            targetArea = AreaID.BAR_MEZZANINE;
+          } else {
+            targetArea = AreaID.BAR_MAIN;
+          }
+          break;
+        case 'toilets':
+          const agentFloor = agent.getFloor();
+          if (agentFloor === Floor.SECOND && floorLayoutRef.current.getArea(AreaID.BATHROOMS_SECOND)?.isUnlocked) {
+            targetArea = AreaID.BATHROOMS_SECOND;
+          } else {
+            targetArea = AreaID.BATHROOMS_FIRST;
+          }
+          break;
+        case 'dancefloor':
+        default:
+          if (gameState.tier >= 2 && floorLayoutRef.current.getArea(AreaID.PANORAMA_DANCEFLOOR)?.isUnlocked && Math.random() < 0.4) {
+            targetArea = AreaID.PANORAMA_DANCEFLOOR;
+          } else {
+            targetArea = AreaID.BERGHAIN_DANCEFLOOR;
+          }
+          break;
+      }
+      
+      const finalArea = floorLayoutRef.current.getArea(targetArea);
+      if (finalArea?.isUnlocked) {
+        const agentCurrentFloor = agent.getFloor();
+        const targetFloor = finalArea.floor;
+        
+        if (agentCurrentFloor !== targetFloor) {
+          // Handle floor transitions (simplified)
+          const connections = floorLayoutRef.current.getConnectionsBetweenFloors(agentCurrentFloor, targetFloor);
+          if (connections.length > 0) {
+            const stairArea = floorLayoutRef.current.getArea(connections[0]);
+            if (stairArea?.isUnlocked) {
+              const stairX = (stairArea.bounds.x / 50) * canvas.width;
+              const stairY = (stairArea.bounds.y / 45) * canvas.height;
+              agent.setDestination(stairX, stairY);
+            }
+          }
         } else {
-          ctx.shadowBlur = 0;
+          // Same floor movement
+          const targetX = ((finalArea.bounds.x + Math.random() * finalArea.bounds.width) / 50) * canvas.width;
+          const targetY = ((finalArea.bounds.y + Math.random() * finalArea.bounds.height) / 45) * canvas.height;
+          agent.setDestination(targetX, targetY);
         }
-        ctx.beginPath();
-        ctx.arc(clubber.x, clubber.y, 3, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.shadowBlur = 0; // Reset shadow
-      });
-
-      animationRef.current = requestAnimationFrame(animate);
+      }
     };
 
-    // Initial spawn and start animation
-    spawnClubbers();
-    animate();
+    // Lightweight render loop - only redraws when needed
+    const renderLoop = () => {
+      if (!ctx || !gameState || !floorRendererRef.current) {
+        animationRef.current = requestAnimationFrame(renderLoop);
+        return;
+      }
+      
+      const now = Date.now();
+      const timeSinceLastRender = now - lastRenderRef.current;
+      
+      // Only redraw if needed and limit to 30fps max
+      if (canvasNeedsRedrawRef.current || timeSinceLastRender > 33) {
+        // Clear and redraw
+        floorRendererRef.current.render(gameState.tier);
+        
+        // Draw agents (only those on current floor)
+        const currentFloor = floorRendererRef.current?.getCurrentFloor() || Floor.FIRST;
+        agentsRef.current.forEach(agent => {
+          if (agent.getFloor() !== currentFloor) return;
+          
+          let color: string;
+          if (agent.isGuestList) {
+            const vipColors = ['#9932cc', '#8a2be2'];
+            const vipIndex = vipAgentsRef.current.indexOf(agent);
+            color = vipColors[vipIndex] || '#9932cc';
+          } else {
+            const tierColors = CROWD_COLORS[gameState.tier];
+            color = tierColors[Math.floor(Math.random() * tierColors.length)];
+          }
+          
+          ctx.fillStyle = color;
+          
+          if (gameState.tier <= 1) {
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 4;
+          } else if (gameState.tier >= 4) {
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 2;
+          } else {
+            ctx.shadowBlur = 0;
+          }
+          
+          ctx.beginPath();
+          const radius = gameState.tier <= 1 ? 3 : gameState.tier <= 3 ? 3.5 : 4;
+          ctx.arc(agent.x, agent.y, radius, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        });
+        
+        // Draw bouncer
+        if (bouncerSystemRef.current) {
+          const bouncer = bouncerSystemRef.current.getBouncerPosition();
+          const bouncerCanvasX = (bouncer.x / 50) * canvas.width;
+          const bouncerCanvasY = (bouncer.y / 45) * canvas.height;
+          
+          ctx.fillStyle = '#ff0000';
+          ctx.shadowColor = '#ff0000';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(bouncerCanvasX, bouncerCanvasY, bouncer.size * 3, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+        
+        canvasNeedsRedrawRef.current = false;
+        lastRenderRef.current = now;
+      }
+
+      animationRef.current = requestAnimationFrame(renderLoop);
+    };
+
+    // Start both loops
+    gameLoopIntervalRef.current = setInterval(gameLogicLoop, 50); // 20fps for game logic
+    renderLoop(); // 30fps max for rendering
+
+    // Initial spawn
+    spawnAgents();
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+      }
+      if (gameLoopIntervalRef.current) {
+        clearInterval(gameLoopIntervalRef.current);
       }
       window.removeEventListener('resize', resizeCanvas);
     };
@@ -470,16 +848,103 @@ export default function BergIncPage() {
     root.style.setProperty('--berg-font', gameState.currentTheme?.fontFamily || 'Monaco, "Courier New", monospace');
   }, [gameState?.currentTheme]);
 
-  // Mouse tracking for cursor glow
+  // Mouse tracking for cursor glow and floor switching controls
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const root = document.documentElement;
       root.style.setProperty('--mouse-x', e.clientX + 'px');
       root.style.setProperty('--mouse-y', e.clientY + 'px');
     };
+    
+    const handleCanvasMouseMove = (e: MouseEvent) => {
+      if (!canvasRef.current) return;
+      
+      const canvas = canvasRef.current;
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      setMousePos({ x: e.clientX, y: e.clientY });
+      
+      // Check if mouse is over any agent
+      const currentFloor = floorRendererRef.current?.getCurrentFloor() || Floor.FIRST;
+      let foundAgent: Agent | null = null;
+      
+      for (const agent of agentsRef.current) {
+        if (agent.getFloor() !== currentFloor) continue;
+        
+        const agentRadius = 8; // Agent visual radius
+        const distance = Math.sqrt(
+          Math.pow(mouseX - agent.x, 2) + Math.pow(mouseY - agent.y, 2)
+        );
+        
+        if (distance <= agentRadius) {
+          foundAgent = agent;
+          break;
+        }
+      }
+      
+      setHoveredAgent(foundAgent);
+    };
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!floorRendererRef.current || !floorLayoutRef.current) return;
+      
+      switch (e.key) {
+        case '1':
+          // Check if Ground floor is unlocked
+          const groundArea = floorLayoutRef.current.getArea(AreaID.ENTRANCE);
+          if (groundArea?.isUnlocked) {
+            floorRendererRef.current.switchFloor(Floor.GROUND);
+            setCurrentFloor(Floor.GROUND);
+            canvasNeedsRedrawRef.current = true;
+          }
+          break;
+        case '2':
+          // Check if First floor is unlocked
+          const firstArea = floorLayoutRef.current.getArea(AreaID.BERGHAIN_DANCEFLOOR);
+          if (firstArea?.isUnlocked) {
+            floorRendererRef.current.switchFloor(Floor.FIRST);
+            setCurrentFloor(Floor.FIRST);
+            canvasNeedsRedrawRef.current = true;
+          }
+          break;
+        case '3':
+          // Check if Second floor is unlocked
+          const secondArea = floorLayoutRef.current.getArea(AreaID.PANORAMA_DANCEFLOOR);
+          if (secondArea?.isUnlocked) {
+            floorRendererRef.current.switchFloor(Floor.SECOND);
+            setCurrentFloor(Floor.SECOND);
+            canvasNeedsRedrawRef.current = true;
+          }
+          break;
+        case '+':
+        case '=':
+          floorRendererRef.current.zoomIn(currentFloor === Floor.GROUND ? 1.2 : 1.1);
+          canvasNeedsRedrawRef.current = true;
+          break;
+        case '-':
+          floorRendererRef.current.zoomOut(0.8);
+          canvasNeedsRedrawRef.current = true;
+          break;
+      }
+    };
 
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener('keydown', handleKeyPress);
+    
+    // Add canvas-specific mouse event
+    if (canvasRef.current) {
+      canvasRef.current.addEventListener('mousemove', handleCanvasMouseMove);
+    }
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('keydown', handleKeyPress);
+      if (canvasRef.current) {
+        canvasRef.current.removeEventListener('mousemove', handleCanvasMouseMove);
+      }
+    };
   }, []);
 
   // Audio control
@@ -492,9 +957,45 @@ export default function BergIncPage() {
 
   // Start new game
   const startNewGame = () => {
-    console.log(  'Starting new game...');
+    console.log('Starting new game...');
     const newGameState = createInitialGameState();
     console.log('New game state:', newGameState);
+    
+    // Initialize queue with some initial visitors
+    if (visitorArrivalSystemRef.current) {
+      const initialGroups = visitorArrivalSystemRef.current.getInitialQueue(0);
+      const initialQueue: Clubber[] = [];
+      
+      initialGroups.forEach(group => {
+        for (let i = 0; i < group.size; i++) {
+          initialQueue.push({
+            id: `initial-${Date.now()}-${Math.random()}`,
+            x: 0,
+            y: 0,
+            targetX: 0,
+            targetY: 0,
+            color: CROWD_COLORS[0][0],
+            type: group.type as any,
+            currentSpace: 'queue',
+            journey: ['queue', 'entrance', 'dancefloor', 'bar', 'toilets', 'exit'] as JourneyStep[],
+            journeyStep: 0,
+            spentMoney: 0,
+            entryFee: 10,
+            timeInClub: 0,
+            stamina: 100,
+            tiredness: 0,
+            speed: 1,
+            pauseTime: 2000,
+            lastMoved: Date.now(),
+            movementPattern: 'organic' as const
+          });
+        }
+      });
+      
+      newGameState.queue = initialQueue;
+      console.log(`🚶 Initialized queue with ${initialQueue.length} clubbers`);
+    }
+    
     setGameState(newGameState);
     setGameStarted(true);
   };
@@ -510,7 +1011,17 @@ export default function BergIncPage() {
           console.log(`🚀 Fast forwarded to tier ${targetTier} with €${revenue}`);
         },
         
-        getGameState: () => gameState,
+        getGameState: () => {
+          console.log('📊 Current Game State:', {
+            tier: gameState?.tier,
+            revenue: gameState?.revenue,
+            capacity: gameState?.capacity,
+            agents: agentsRef.current.length,
+            queue: gameState?.queue?.length || 0,
+            totalCustomers: gameState?.totalCustomers
+          });
+          return gameState;
+        },
         
         testAudio: () => {
           if (audioManagerRef.current) {
@@ -519,35 +1030,259 @@ export default function BergIncPage() {
           }
         },
         
-        spawnClubbers: (count: number) => {
-          if (!gameState) return;
-          const newClubbers = Array.from({ length: count }, (_, i) => ({
-            id: `debug-${Date.now()}-${i}`,
-            x: Math.random() * 400,
-            y: Math.random() * 300,
-            targetX: Math.random() * 400,
-            targetY: Math.random() * 300,
-            color: CROWD_COLORS[gameState.tier][Math.floor(Math.random() * CROWD_COLORS[gameState.tier].length)],
-            type: 'authentic' as const,
-            currentSpace: 'dancefloor',
-            journey: ['entrance', 'dancefloor', 'bar', 'toilets', 'exit'] as JourneyStep[],
-            journeyStep: 1,
-            spentMoney: 0,
-            entryFee: gameState.tier < 6 ? [5, 8, 12, 18, 25, 30][gameState.tier] : 30,
-            timeInClub: 0,
-            stamina: Math.random() * 50 + 50,
-            tiredness: 0,
-            speed: gameState.tier <= 1 ? 0.5 : gameState.tier <= 3 ? 1.5 : 3,
-            pauseTime: gameState.tier <= 1 ? 3000 : gameState.tier <= 3 ? 1500 : 500,
-            lastMoved: Date.now(),
-            movementPattern: gameState.tier <= 1 ? 'organic' as const : gameState.tier <= 3 ? 'erratic' as const : 'performative' as const
+        spawnAgents: (count: number) => {
+          if (!gameState || !canvasRef.current) return;
+          const canvas = canvasRef.current;
+          
+          for (let i = 0; i < count; i++) {
+            const agentType: AgentType = gameState.tier <= 1 ? 'authentic' : 
+                                       gameState.tier <= 2 ? 'regular' :
+                                       gameState.tier <= 3 ? 'curious' : 
+                                       gameState.tier <= 4 ? 'tourist' : 'influencer';
+            
+            const agent = new Agent(
+              `debug-agent-${Date.now()}-${i}`,
+              Math.random() * canvas.width,
+              Math.random() * canvas.height,
+              {
+                type: agentType,
+                stamina: 80 + Math.random() * 20,
+                socialEnergy: 60 + Math.random() * 40,
+                entertainment: 50 + Math.random() * 50
+              }
+            );
+            
+            // Initialize agent systems
+            const memorySystem = new MemorySystem(agent);
+            memorySystemsRef.current.set(agent.id, memorySystem);
+            
+            if (reputationSystemRef.current) {
+              reputationSystemRef.current.getAgentReputation(agent.id);
+            }
+            
+            agentsRef.current.push(agent);
+          }
+          
+          console.log(`🕺 Spawned ${count} intelligent agents`);
+        },
+        
+        getAgentStats: () => {
+          const stats = agentsRef.current.map(agent => ({
+            id: agent.id,
+            type: agent.type,
+            floor: agent.getFloor(),
+            position: { x: Math.floor(agent.x), y: Math.floor(agent.y) },
+            needs: {
+              stamina: Math.floor(agent.stamina),
+              social: Math.floor(agent.socialEnergy),
+              entertainment: Math.floor(agent.entertainment)
+            }
           }));
-          setGameState(prev => prev ? { ...prev, clubbers: [...prev.clubbers, ...newClubbers] } : null);
-          console.log(`🕺 Spawned ${count} clubbers`);
+          console.table(stats);
+          return stats;
+        },
+        
+        getFloorStats: () => {
+          const floorCounts = [0, 1, 2].map(floor => ({
+            floor: ['Ground', 'Berghain', 'Panorama'][floor],
+            agents: agentsRef.current.filter(a => a.getFloor() === floor).length
+          }));
+          console.table(floorCounts);
+          return floorCounts;
+        },
+        
+        // Rendering debug tools
+        debugRendering: () => {
+          console.log('🎨 Rendering Debug:', {
+            canvas: !!canvasRef.current,
+            context: !!canvasRef.current?.getContext('2d'),
+            floorRenderer: !!floorRendererRef.current,
+            floorLayout: !!floorLayoutRef.current,
+            currentFloor: floorRendererRef.current?.getCurrentFloor(),
+            animationRunning: !!animationRef.current
+          });
+          
+          if (floorLayoutRef.current) {
+            const floors = [0, 1, 2].map(f => {
+              const plan = floorLayoutRef.current!.getFloorPlan(f);
+              const unlockedAreas = plan?.areas?.filter(a => a.isUnlocked) || [];
+              return {
+                floor: f,
+                plan: !!plan,
+                areas: plan?.areas?.length || 0,
+                unlockedAreas: unlockedAreas.length,
+                unlockedList: unlockedAreas.map(a => a.id),
+                gridSize: plan ? `${plan.width}x${plan.height}` : 'none'
+              };
+            });
+            console.log('🏢 Floor Plans:', floors);
+          }
+          
+          if (floorRendererRef.current && canvasRef.current) {
+            console.log('🎨 FloorRenderer test render...');
+            const ctx = canvasRef.current.getContext('2d');
+            if (ctx) {
+              // Clear canvas first
+              ctx.fillStyle = '#ff0000';
+              ctx.fillRect(0, 0, 100, 100);
+              console.log('🔴 Drew red test square');
+            }
+            floorRendererRef.current.render(gameState?.tier || 0);
+          }
+        },
+        
+        toggleGrid: () => {
+          if (floorRendererRef.current) {
+            floorRendererRef.current.setRenderOptions({ showGrid: true });
+            console.log('🔲 Grid visibility enabled');
+          }
+        },
+        
+        switchFloor: (floor: number) => {
+          if (floorRendererRef.current && floor >= 0 && floor <= 2) {
+            floorRendererRef.current.switchFloor(floor);
+            console.log(`🏢 Switched to floor ${floor}`);
+          }
+        },
+        
+        addRegulars: () => {
+          if (!gameState || !canvasRef.current) return;
+          
+          // Add VIP regular pair
+          const vipTypes = ['regular', 'regular'] as AgentType[];
+          const colors = ['#9932cc', '#8a2be2']; // Two shades of purple
+          
+          vipTypes.forEach((type, i) => {
+            const agent = new Agent(
+              `vip-regular-${i}`,
+              50 + i * 20, // Fixed positions near entrance
+              50,
+              {
+                type,
+                stamina: 100,
+                socialEnergy: 100,
+                entertainment: 100
+              }
+            );
+            agent.isGuestList = true;
+            agentsRef.current.push(agent);
+          });
+          
+          console.log('👑 Added 2 guest list regulars (purple shades)');
+        },
+        
+        renderFallback: () => {
+          if (!canvasRef.current) return;
+          
+          const ctx = canvasRef.current.getContext('2d');
+          if (!ctx) return;
+          
+          // Clear canvas
+          ctx.fillStyle = '#0a0a0a';
+          ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          
+          // Draw fallback layout
+          ctx.strokeStyle = '#333333';
+          ctx.fillStyle = '#1a1a1a';
+          ctx.lineWidth = 2;
+          
+          // Draw rooms
+          const rooms = [
+            { x: 50, y: 50, w: 100, h: 80, label: 'Entrance' },
+            { x: 200, y: 50, w: 150, h: 120, label: 'Berghain' },
+            { x: 400, y: 50, w: 100, h: 80, label: 'Bar' },
+            { x: 200, y: 200, w: 200, h: 100, label: 'Panorama' }
+          ];
+          
+          rooms.forEach(room => {
+            ctx.fillRect(room.x, room.y, room.w, room.h);
+            ctx.strokeRect(room.x, room.y, room.w, room.h);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px monospace';
+            ctx.fillText(room.label, room.x + 10, room.y + 20);
+            ctx.fillStyle = '#1a1a1a';
+          });
+          
+          console.log('🎨 Fallback layout rendered');
+        },
+        
+        getTimeInfo: () => {
+          if (timeSystemRef.current) {
+            const time = timeSystemRef.current.getCurrentTime();
+            const timeString = timeSystemRef.current.getTimeString();
+            console.log('⏰ Time System:', { time, timeString });
+            return { time, timeString };
+          }
+        },
+        
+        revenue: {
+          add: (amount: number) => {
+            setGameState(prev => prev ? { ...prev, revenue: prev.revenue + amount } : null);
+            console.log(`💰 Added €${amount} revenue`);
+          },
+          set: (amount: number) => {
+            setGameState(prev => prev ? { ...prev, revenue: amount } : null);
+            console.log(`💰 Set revenue to €${amount}`);
+          }
+        },
+        
+        testCanvas: () => {
+          if (!canvasRef.current) {
+            console.log('❌ No canvas found');
+            return;
+          }
+          
+          const ctx = canvasRef.current.getContext('2d');
+          if (!ctx) {
+            console.log('❌ No context found');
+            return;
+          }
+          
+          // Clear and draw test pattern
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          
+          // Draw grid
+          ctx.strokeStyle = '#333333';
+          ctx.lineWidth = 1;
+          for (let x = 0; x < canvasRef.current.width; x += 20) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvasRef.current.height);
+            ctx.stroke();
+          }
+          for (let y = 0; y < canvasRef.current.height; y += 20) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvasRef.current.width, y);
+            ctx.stroke();
+          }
+          
+          // Draw test shapes
+          ctx.fillStyle = '#ff0000';
+          ctx.fillRect(50, 50, 100, 100);
+          
+          ctx.fillStyle = '#00ff00';
+          ctx.fillRect(200, 50, 100, 100);
+          
+          ctx.fillStyle = '#0000ff';
+          ctx.fillRect(350, 50, 100, 100);
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '20px monospace';
+          ctx.fillText('CANVAS TEST', 50, 200);
+          
+          console.log('✅ Canvas test pattern drawn');
         }
       };
       
-      console.log('🛠️ BergInc debug tools loaded. Try: window.bergDebug.fastForward(3)');
+      console.log('🛠️ BergInc debug tools loaded. Try:');
+      console.log('  window.bergDebug.debugRendering()  // Debug rendering issues');
+      console.log('  window.bergDebug.testCanvas()      // Test canvas drawing');
+      console.log('  window.bergDebug.renderFallback()  // Draw fallback layout');
+      console.log('  window.bergDebug.switchFloor(1)    // Switch to floor 1');
+      console.log('  window.bergDebug.fastForward(3)    // Fast forward to tier 3');
     }
   }, [gameState]);
 
@@ -667,7 +1402,7 @@ export default function BergIncPage() {
   // Main game interface
   return (
     <div 
-      className="min-h-screen p-4 transition-all duration-1000 cursor-none"
+      className="min-h-screen p-4 transition-all duration-1000"
       style={{ 
         backgroundColor: `var(--berg-bg, ${gameState.currentTheme?.backgroundColor || '#0a0a0a'})`,
         color: `var(--berg-text, ${gameState.currentTheme?.textColor || '#666666'})`,
@@ -691,13 +1426,7 @@ export default function BergIncPage() {
       />
       
       <style jsx global>{`
-        * {
-          cursor: none !important;
-        }
-        
-        button, a, [role="button"] {
-          cursor: none !important;
-        }
+        /* Keep normal cursor behavior */
       `}</style>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
@@ -730,7 +1459,7 @@ export default function BergIncPage() {
         </div>
 
         {/* Stats Display */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div 
             className="p-4 border rounded"
             style={{ 
@@ -781,42 +1510,151 @@ export default function BergIncPage() {
             <div className="text-lg font-bold">{Math.floor(gameState.communityHappiness)}%</div>
             <div className="text-sm opacity-60">Community</div>
           </div>
+          <div 
+            className="p-4 border rounded"
+            style={{ 
+              borderColor: `var(--berg-border, ${gameState.currentTheme?.borderColor})`,
+              backgroundColor: `var(--berg-accent, ${gameState.currentTheme?.accentColor})20`
+            }}
+          >
+            <div className="text-lg font-bold">
+              {timeSystemRef.current ? timeSystemRef.current.getTimeString() : 'Loading...'}
+            </div>
+            <div className="text-sm opacity-60">Klubnacht Time</div>
+          </div>
         </div>
 
-        {/* Main Game Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Club Simulation */}
-          <div 
-            className="border rounded p-4"
-            style={{ borderColor: `var(--berg-border, ${gameState.currentTheme?.borderColor})` }}
+        {/* Management Controls */}
+        <div className="flex justify-end gap-2 mb-4">
+          <button
+            onClick={() => setShowQueueLog(!showQueueLog)}
+            className="px-4 py-2 border rounded transition-colors"
+            style={{ 
+              borderColor: `var(--berg-border, ${gameState.currentTheme?.borderColor})`,
+              backgroundColor: showQueueLog ? `var(--berg-accent, ${gameState.currentTheme?.accentColor})` : 'transparent'
+            }}
           >
-            <h3 className="text-lg font-semibold mb-4">Main Floor</h3>
-            <canvas
-              ref={canvasRef}
-              width={400}
-              height={300}
-              className="w-full h-auto border rounded"
+            {showQueueLog ? 'Close Queue Log' : 'Open Queue Log'}
+          </button>
+          <button
+            onClick={() => setShowManagement(!showManagement)}
+            className="px-4 py-2 border rounded transition-colors"
+            style={{ 
+              borderColor: `var(--berg-border, ${gameState.currentTheme?.borderColor})`,
+              backgroundColor: showManagement ? `var(--berg-accent, ${gameState.currentTheme?.accentColor})` : 'transparent'
+            }}
+          >
+            {showManagement ? 'Close Management' : 'Open Management'}
+          </button>
+        </div>
+
+        {/* Full-Width Club Layout */}
+        <div 
+          className="border rounded p-4 mb-6"
+          style={{ borderColor: `var(--berg-border, ${gameState.currentTheme?.borderColor})` }}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-4">
+              <h3 className="text-xl font-semibold">Berghain</h3>
+              <div className="flex gap-2 text-sm">
+                {[
+                  { id: 0, name: 'Ground', areaId: AreaID.ENTRANCE },
+                  { id: 1, name: 'Berghain', areaId: AreaID.BERGHAIN_DANCEFLOOR },
+                  { id: 2, name: 'Panorama', areaId: AreaID.PANORAMA_DANCEFLOOR }
+                ].map(floor => {
+                  const isUnlocked = floorLayoutRef.current?.getArea(floor.areaId)?.isUnlocked || false;
+                  const isActive = currentFloor === floor.id;
+                  
+                  return (
+                    <button
+                      key={floor.id}
+                      disabled={!isUnlocked}
+                      className={`px-3 py-1 border rounded transition-colors ${
+                        isActive 
+                          ? 'bg-white text-black' 
+                          : isUnlocked 
+                          ? 'border-gray-600 hover:border-gray-400' 
+                          : 'border-gray-800 text-gray-600 cursor-not-allowed'
+                      }`}
+                      onClick={() => {
+                        if (floorRendererRef.current && isUnlocked) {
+                          floorRendererRef.current.switchFloor(floor.id);
+                          setCurrentFloor(floor.id);
+                          canvasNeedsRedrawRef.current = true;
+                        }
+                      }}
+                    >
+                      [{floor.id}] {floor.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex gap-6 text-sm opacity-60">
+              <span>Press 1-3 for floors, +/- to zoom</span>
+              <span>Queue: {gameState.queue.length} | 
+                0: Ground ({agentsRef.current.filter(a => a.getFloor() === 0).length}) | 
+                1: Berghain ({agentsRef.current.filter(a => a.getFloor() === 1).length}) | 
+                2: Panorama ({agentsRef.current.filter(a => a.getFloor() === 2).length})
+              </span>
+            </div>
+          </div>
+          
+          <canvas
+            ref={canvasRef}
+            width={800}
+            height={600}
+            className="w-full border rounded"
+            style={{ 
+              borderColor: `var(--berg-border, ${gameState.currentTheme?.borderColor})`,
+              backgroundColor: `var(--berg-bg, ${gameState.currentTheme?.backgroundColor})`,
+              height: '60vh',
+              minHeight: '400px'
+            }}
+          />
+          
+          <div className="flex justify-between items-center mt-4">
+            <div className="flex gap-4 text-sm opacity-60">
+              <span>0: Queue ({gameState.queue.length})</span>
+              <span>1: Ground ({agentsRef.current.filter(a => a.getFloor() === 0).length})</span>
+              <span>2: Berghain ({agentsRef.current.filter(a => a.getFloor() === 1).length})</span>
+              <span>3: Panorama ({agentsRef.current.filter(a => a.getFloor() === 2).length})</span>
+            </div>
+            <div className="flex gap-4 text-sm">
+              <span className="opacity-60">Total Inside: {agentsRef.current.length}</span>
+              <span className="text-green-400">€{gameState.revenuePerSecond.toFixed(1)}/s</span>
+            </div>
+          </div>
+          
+          <p className="text-center text-sm opacity-60 mt-2">
+            {gameState.tier <= 1 
+              ? "Collective trance movement in the underground sanctuary..." 
+              : gameState.tier <= 3 
+              ? "Erratic individual dancing as curiosity brings new faces..."
+              : "Performative selfie-taking as the space becomes commercialized..."
+            }
+          </p>
+        </div>
+
+        {/* Management Modal */}
+        {showManagement && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div 
+              className="bg-black border rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto"
               style={{ 
                 borderColor: `var(--berg-border, ${gameState.currentTheme?.borderColor})`,
                 backgroundColor: `var(--berg-bg, ${gameState.currentTheme?.backgroundColor})`
               }}
-            />
-            <p className="text-sm opacity-60 mt-2">
-              {gameState.tier <= 1 
-                ? "Dancers move together in collective trance..." 
-                : gameState.tier <= 3 
-                ? "Movement becomes more erratic and individual..."
-                : "Everyone dances alone, taking selfies..."
-              }
-            </p>
-          </div>
-
-          {/* Upgrades */}
-          <div 
-            className="border rounded p-4"
-            style={{ borderColor: `var(--berg-border, ${gameState.currentTheme?.borderColor})` }}
-          >
-            <h3 className="text-lg font-semibold mb-4">Club Management</h3>
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold">Club Management</h3>
+                <button
+                  onClick={() => setShowManagement(false)}
+                  className="text-xl opacity-60 hover:opacity-100"
+                >
+                  ×
+                </button>
+              </div>
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between items-center mb-2">
@@ -896,8 +1734,127 @@ export default function BergIncPage() {
                 </div>
               )}
             </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Queue Log Modal */}
+        {showQueueLog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div 
+              className="bg-black border rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto"
+              style={{ 
+                borderColor: `var(--berg-border, ${gameState.currentTheme?.borderColor})`,
+                backgroundColor: `var(--berg-bg, ${gameState.currentTheme?.backgroundColor})`
+              }}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold">Bouncer Decision Log</h3>
+                <button
+                  onClick={() => setShowQueueLog(false)}
+                  className="text-xl opacity-60 hover:opacity-100"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-3 gap-4 p-4 border rounded" style={{ borderColor: `var(--berg-border, ${gameState.currentTheme?.borderColor})` }}>
+                  {(() => {
+                    const log = bouncerSystemRef.current?.getDecisionLog() || [];
+                    const accepted = log.filter(entry => entry.decision === 'accept').length;
+                    const rejected = log.filter(entry => entry.decision === 'reject').length;
+                    const acceptanceRate = log.length > 0 ? ((accepted / log.length) * 100).toFixed(1) : '0';
+                    
+                    return (
+                      <>
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-green-400">{accepted}</div>
+                          <div className="text-sm opacity-60">Accepted</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-red-400">{rejected}</div>
+                          <div className="text-sm opacity-60">Rejected</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-bold">{acceptanceRate}%</div>
+                          <div className="text-sm opacity-60">Acceptance Rate</div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+                
+                {/* Decision Log */}
+                <div className="max-h-96 overflow-y-auto">
+                  {(() => {
+                    const log = bouncerSystemRef.current?.getDecisionLog() || [];
+                    
+                    if (log.length === 0) {
+                      return (
+                        <div className="text-center py-8 opacity-60">
+                          No bouncer decisions yet. Wait for people to join the queue!
+                        </div>
+                      );
+                    }
+                    
+                    return log.map((entry: BouncerLogEntry) => (
+                      <div 
+                        key={entry.id}
+                        className={`p-3 border rounded mb-2 ${entry.decision === 'accept' ? 'border-green-800 bg-green-900 bg-opacity-20' : 'border-red-800 bg-red-900 bg-opacity-20'}`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`font-semibold ${entry.decision === 'accept' ? 'text-green-400' : 'text-red-400'}`}>
+                                {entry.decision === 'accept' ? '✅' : '❌'} {entry.agentName}
+                              </span>
+                              <span className="text-xs opacity-60 px-2 py-1 rounded" style={{ backgroundColor: 'var(--berg-accent, #333)' }}>
+                                {entry.agentType}
+                              </span>
+                              {entry.isGuestList && (
+                                <span className="text-xs text-purple-400 px-2 py-1 rounded bg-purple-900 bg-opacity-30">
+                                  👑 Guest List
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm">
+                              <span className="opacity-80">Reason: </span>
+                              <span className={entry.decision === 'accept' ? 'text-green-300' : 'text-red-300'}>
+                                {entry.reason}
+                              </span>
+                            </div>
+                            <div className="flex gap-4 mt-1 text-xs opacity-60">
+                              <span>Wait: {Math.floor(entry.waitTime / 1000)}s</span>
+                              <span>Budget: €{Math.floor(entry.budget)}</span>
+                              <span>Time: {new Date(entry.timestamp).toLocaleTimeString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+                
+                {/* Clear Log Button */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      if (bouncerSystemRef.current) {
+                        bouncerSystemRef.current.clearDecisionLog();
+                      }
+                    }}
+                    className="px-4 py-2 border rounded opacity-60 hover:opacity-100 transition-colors"
+                    style={{ borderColor: `var(--berg-border, ${gameState.currentTheme?.borderColor})` }}
+                  >
+                    Clear Log
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Current Quote */}
         {gameState.currentQuote && (
@@ -925,6 +1882,21 @@ export default function BergIncPage() {
             <p className="text-sm opacity-60">
               — {gameState.currentQuote.source}
             </p>
+          </div>
+        )}
+        
+        {/* Agent Tooltip */}
+        {hoveredAgent && mousePos && (
+          <div 
+            className="fixed z-50 bg-black border border-gray-600 rounded p-3 text-sm pointer-events-none shadow-lg"
+            style={{
+              left: mousePos.x + 15,
+              top: mousePos.y - 10,
+              whiteSpace: 'pre-line',
+              fontFamily: 'Monaco, "Courier New", monospace'
+            }}
+          >
+            {hoveredAgent.getTooltipInfo()}
           </div>
         )}
       </div>

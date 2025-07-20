@@ -525,9 +525,9 @@ export class TransactionSystem {
 
   public getRevenueByType(): Record<string, number> {
     const result: Record<string, number> = {};
-    for (const [type, amount] of this.revenueByType.entries()) {
+    this.revenueByType.forEach((amount, type) => {
       result[type] = amount;
-    }
+    });
     return result;
   }
 

@@ -361,7 +361,7 @@ export class ReputationSystem {
   public cleanExpiredModifiers(): void {
     const now = performance.now();
     
-    for (const [agentId, modifiers] of this.modifiers.entries()) {
+    this.modifiers.forEach((modifiers, agentId) => {
       const activeModifiers = modifiers.filter(modifier => 
         now < modifier.timestamp + modifier.duration
       );
@@ -369,14 +369,14 @@ export class ReputationSystem {
       if (activeModifiers.length !== modifiers.length) {
         this.modifiers.set(agentId, activeModifiers);
       }
-    }
+    });
   }
 
   public processDecay(deltaTime: number): void {
     const decayAmount = this.decayRate * (deltaTime / (1000 * 60 * 60)); // Per hour
     const now = performance.now();
     
-    for (const [agentId, reputation] of this.reputations.entries()) {
+    this.reputations.forEach((reputation, agentId) => {
       // Slower decay for recently active agents
       const timeSinceActivity = now - reputation.lastActivity;
       const activityBonus = Math.max(0.3, Math.exp(-timeSinceActivity / (1000 * 60 * 60))); // Exponential decay over hours
@@ -389,7 +389,7 @@ export class ReputationSystem {
       reputation.musical = this.decayValue(reputation.musical, adjustedDecay);
       reputation.economic = this.decayValue(reputation.economic, adjustedDecay);
       reputation.overall = this.calculateOverallReputation(reputation);
-    }
+    });
   }
 
   private decayValue(current: number, decayAmount: number): number {
@@ -457,14 +457,14 @@ export class ReputationSystem {
   public getTopAgents(category: ReputationCategory, limit: number = 10): ReputationLeader[] {
     const leaders: ReputationLeader[] = [];
     
-    for (const [agentId, reputation] of this.reputations.entries()) {
+    this.reputations.forEach((reputation, agentId) => {
       leaders.push({
         agentId,
         agentType: reputation.agentType,
         score: (reputation as any)[category],
         category
       });
-    }
+    });
     
     return leaders
       .sort((a, b) => b.score - a.score)
@@ -509,14 +509,14 @@ export class ReputationSystem {
     
     const totals = { overall: 0, scene: 0, social: 0, cultural: 0, musical: 0, economic: 0 };
     
-    for (const reputation of this.reputations.values()) {
+    this.reputations.forEach((reputation) => {
       totals.overall += reputation.overall;
       totals.scene += reputation.scene;
       totals.social += reputation.social;
       totals.cultural += reputation.cultural;
       totals.musical += reputation.musical;
       totals.economic += reputation.economic;
-    }
+    });
     
     const count = this.reputations.size;
     return {
@@ -535,12 +535,12 @@ export class ReputationSystem {
     for (const category of Object.values(ReputationCategory)) {
       distribution[category] = { high: 0, medium: 0, low: 0 };
       
-      for (const reputation of this.reputations.values()) {
+      this.reputations.forEach((reputation) => {
         const value = (reputation as any)[category];
         if (value >= 70) distribution[category].high++;
         else if (value >= 40) distribution[category].medium++;
         else distribution[category].low++;
-      }
+      });
     }
     
     return distribution;
@@ -549,9 +549,9 @@ export class ReputationSystem {
   private getAgentTypeDistribution(): Record<AgentType, number> {
     const distribution = {} as Record<AgentType, number>;
     
-    for (const reputation of this.reputations.values()) {
+    this.reputations.forEach((reputation) => {
       distribution[reputation.agentType] = (distribution[reputation.agentType] || 0) + 1;
-    }
+    });
     
     return distribution;
   }
@@ -595,7 +595,7 @@ export class ReputationSystem {
     return {
       totalWitnesses: this.witnessInsights.size,
       totalInsights,
-      averageReliability,
+      avgReliability,
       activeWitnesses: Array.from(this.witnessInsights.entries())
         .filter(([_, insights]) => insights.some(i => 
           performance.now() - i.lastSeen < 3600000 // Active in last hour

@@ -5,6 +5,7 @@
 
 import { GridMap, Position } from '../map/GridMap';
 import { PathfindingSystem } from '../map/PathfindingSystem';
+import { nameGenerator } from '../utils/NameGenerator';
 
 export enum AgentState {
   IDLE = 'idle',
@@ -29,6 +30,7 @@ export interface AgentConfig {
   socialEnergy?: number;
   entertainment?: number;
   color?: string;
+  customName?: { firstName: string; lastName: string; origin: string };
 }
 
 export class Agent {
@@ -44,6 +46,16 @@ export class Agent {
   public socialEnergy: number = 50;
   public entertainment: number = 50;
   public color: string;
+  public isGuestList: boolean = false;
+  
+  // Personal info
+  public firstName: string;
+  public lastName: string;
+  public origin: string;
+  public entryTime: number;
+  public mood: string = 'curious';
+  public preferredPartner?: Agent;
+  public budget: number = 0;
 
   // Movement state
   private destination: Position | null = null;
@@ -59,6 +71,10 @@ export class Agent {
   // Internal state
   private lastStaminaUpdate: number = 0;
   private pauseUntil: number = 0;
+  private metadata: Map<string, any> = new Map();
+  
+  // Floor tracking
+  public currentFloor: number = 1; // Start on First Floor (Berghain main)
 
   constructor(id: string, x: number, y: number, config: AgentConfig) {
     this.id = id;
@@ -72,9 +88,32 @@ export class Agent {
     this.socialEnergy = config.socialEnergy ?? this.getDefaultSocialEnergy(config.type);
     this.entertainment = config.entertainment ?? 50;
     this.color = config.color ?? this.getDefaultColor(config.type);
+    
+    // Generate personal info
+    if (config.customName) {
+      this.firstName = config.customName.firstName;
+      this.lastName = config.customName.lastName;
+      this.origin = config.customName.origin;
+    } else {
+      const nameData = nameGenerator.generateName();
+      this.firstName = nameData.firstName;
+      this.lastName = nameData.lastName;
+      this.origin = nameData.origin;
+    }
+    
+    this.entryTime = Date.now();
+    this.mood = this.generateMood();
+    
+    // Generate random budget between 15-500€
+    this.budget = 15 + Math.random() * 485; // 15 to 500
 
     this.lastMoveTime = performance.now();
     this.lastStaminaUpdate = performance.now();
+  }
+  
+  private generateMood(): string {
+    const moods = ['excited', 'curious', 'chill', 'energetic', 'contemplative', 'social', 'focused', 'euphoric'];
+    return moods[Math.floor(Math.random() * moods.length)];
   }
 
   private getDefaultMovementBehavior(type: AgentType): MovementBehavior {
@@ -340,12 +379,33 @@ export class Agent {
     this.destination = null;
     this.currentPath = null;
   }
+  
+  public getTooltipInfo(): string {
+    const timeInClub = Math.floor((Date.now() - this.entryTime) / 60000); // minutes
+    const staminaIcon = this.stamina > 70 ? '💪' : this.stamina > 30 ? '😐' : '😴';
+    const socialIcon = this.socialEnergy > 70 ? '🎉' : this.socialEnergy > 30 ? '🙂' : '😕';
+    const entertainmentIcon = this.entertainment > 70 ? '✨' : this.entertainment > 30 ? '🎵' : '😑';
+    
+    return `${this.firstName} ${this.lastName}
+📍 ${this.origin} · ${this.type}
+😌 ${this.mood} · ${timeInClub}min in club
+${staminaIcon} Energy: ${Math.floor(this.stamina)}%
+${socialIcon} Social: ${Math.floor(this.socialEnergy)}%  
+${entertainmentIcon} Vibe: ${Math.floor(this.entertainment)}%
+💰 Budget: €${Math.floor(this.budget)}
+${this.isGuestList ? '👑 Guest List' : '🎫 Regular Entry'}`;
+  }
+  
+  public getFullName(): string {
+    return `${this.firstName} ${this.lastName}`;
+  }
 
   // Utility methods for debugging and visualization
   public getDebugInfo(): any {
     return {
       id: this.id,
       position: { x: this.x, y: this.y },
+      floor: this.currentFloor,
       state: this.state,
       type: this.type,
       movementBehavior: this.movementBehavior,
@@ -361,5 +421,35 @@ export class Agent {
 
   public toString(): string {
     return `Agent[${this.id}](${this.x.toFixed(1)}, ${this.y.toFixed(1)}) - ${this.state} - ${this.type}`;
+  }
+
+  // Metadata management for multi-floor navigation
+  public setMetadata(key: string, value: any): void {
+    this.metadata.set(key, value);
+  }
+
+  public getMetadata(key: string): any {
+    return this.metadata.get(key);
+  }
+
+  public hasMetadata(key: string): boolean {
+    return this.metadata.has(key);
+  }
+
+  public clearMetadata(key: string): void {
+    this.metadata.delete(key);
+  }
+
+  public clearAllMetadata(): void {
+    this.metadata.clear();
+  }
+
+  // Floor management
+  public setFloor(floor: number): void {
+    this.currentFloor = floor;
+  }
+
+  public getFloor(): number {
+    return this.currentFloor;
   }
 }

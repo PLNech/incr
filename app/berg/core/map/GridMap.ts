@@ -12,7 +12,13 @@ export enum TileType {
   DANCEFLOOR = 'dancefloor',
   ENTRANCE = 'entrance',
   STAGE = 'stage',
-  VIP_AREA = 'vip'
+  VIP_AREA = 'vip',
+  STAIRS = 'stairs',
+  DARKROOM = 'darkroom',
+  OUTDOOR = 'outdoor',
+  MEZZANINE = 'mezzanine',
+  LOUNGE = 'lounge',
+  WALKABLE = 'walkable'
 }
 
 export interface Tile {
@@ -70,12 +76,17 @@ export class GridMap {
     switch (type) {
       case TileType.FLOOR:
       case TileType.DANCEFLOOR:
+      case TileType.WALKABLE:
+      case TileType.OUTDOOR:
+      case TileType.MEZZANINE:
+      case TileType.LOUNGE:
         return { walkable: true, interactable: false, connectsSpaces: false };
       
       case TileType.WALL:
         return { walkable: false, interactable: false, connectsSpaces: false };
       
       case TileType.DOOR:
+      case TileType.STAIRS:
         return { walkable: true, interactable: false, connectsSpaces: true };
       
       case TileType.BAR:
@@ -86,6 +97,9 @@ export class GridMap {
       
       case TileType.ENTRANCE:
         return { walkable: true, interactable: true, connectsSpaces: true };
+      
+      case TileType.DARKROOM:
+        return { walkable: true, interactable: false, connectsSpaces: false };
       
       default:
         return { walkable: true, interactable: false, connectsSpaces: false };
@@ -250,6 +264,12 @@ export class GridMap {
             case TileType.ENTRANCE: result += 'E'; break;
             case TileType.STAGE: result += 'S'; break;
             case TileType.VIP_AREA: result += 'V'; break;
+            case TileType.STAIRS: result += '≡'; break;
+            case TileType.DARKROOM: result += '░'; break;
+            case TileType.OUTDOOR: result += 'O'; break;
+            case TileType.MEZZANINE: result += 'M'; break;
+            case TileType.LOUNGE: result += 'L'; break;
+            case TileType.WALKABLE: result += ' '; break;
             default: result += '?';
           }
         }
