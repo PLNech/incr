@@ -42,9 +42,9 @@ export class BouncerSystem {
   private guestListUsed: number = 0; // Track guest list entries this KN
   private decisionLog: BouncerLogEntry[] = [];
   
-  // Bouncer position and properties
-  public readonly bouncerX: number = 20; // At entrance door
-  public readonly bouncerY: number = 27;
+  // Bouncer position and properties - positioned OUTSIDE entrance, not overlapping
+  public readonly bouncerX: number = 20; // In front of entrance door
+  public readonly bouncerY: number = 30; // Further outside, not overlapping ticket booth
   public readonly size: number = 2; // 2x bigger than regular agents
   
   // Queue configuration - positioned at bottom of expanded grid

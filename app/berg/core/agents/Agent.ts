@@ -264,7 +264,7 @@ export class Agent {
     }
   }
 
-  public update(deltaTime: number): void {
+  public update(deltaTime: number, currentTier: number = 0): void {
     const now = performance.now();
     
     // Update stamina
@@ -275,15 +275,16 @@ export class Agent {
       return;
     }
 
-    // Handle movement
+    // Handle movement with tier-adjusted behavior
     if (this.state === AgentState.MOVING && this.currentPath) {
-      this.updateMovement(deltaTime);
+      this.updateMovement(deltaTime, currentTier);
     }
 
-    // Random pause behavior for organic movement
+    // Random pause behavior for organic movement (tier-adjusted)
     if (this.state === AgentState.IDLE && this.movementBehavior === MovementBehavior.ORGANIC) {
-      if (Math.random() < 0.001) { // Small chance to pause
-        this.pauseUntil = now + this.getPauseDuration();
+      const pauseChance = Math.max(0.0005, 0.001 - (currentTier * 0.0001)); // Less pause at higher tiers
+      if (Math.random() < pauseChance) {
+        this.pauseUntil = now + this.getTierAdjustedPauseDuration(currentTier);
       }
     }
   }
@@ -306,9 +307,9 @@ export class Agent {
     }
   }
 
-  private updateMovement(deltaTime: number): void {
+  private updateMovement(deltaTime: number, currentTier: number = 0): void {
     if (!this.currentPath || this.pathIndex >= this.currentPath.length) {
-      this.reachDestination();
+      this.reachDestination(currentTier);
       return;
     }
 
@@ -322,18 +323,18 @@ export class Agent {
       this.pathIndex++;
       
       if (this.pathIndex >= this.currentPath.length) {
-        this.reachDestination();
+        this.reachDestination(currentTier);
         return;
       }
       
-      // Add random pause between waypoints
+      // Add random pause between waypoints (tier-adjusted)
       if (Math.random() < 0.3) {
-        this.pauseUntil = performance.now() + this.getPauseDuration() * 0.5;
+        this.pauseUntil = performance.now() + this.getTierAdjustedPauseDuration(currentTier) * 0.5;
         return;
       }
     } else {
-      // Move towards target
-      const speed = this.getMovementSpeed();
+      // Move towards target with tier-adjusted speed
+      const speed = this.getTierAdjustedSpeed(currentTier);
       const moveDistance = speed * (deltaTime / 1000);
       
       this.clearPosition();
@@ -345,14 +346,14 @@ export class Agent {
     }
   }
 
-  private reachDestination(): void {
+  private reachDestination(currentTier: number = 0): void {
     this.state = AgentState.IDLE;
     this.destination = null;
     this.currentPath = null;
     this.pathIndex = 0;
     
-    // Add pause after reaching destination
-    this.pauseUntil = performance.now() + this.getPauseDuration();
+    // Add pause after reaching destination (tier-adjusted)
+    this.pauseUntil = performance.now() + this.getTierAdjustedPauseDuration(currentTier);
   }
 
   public getNearbyAgents(allAgents: Agent[], radius: number): Agent[] {
@@ -451,5 +452,86 @@ ${this.isGuestList ? '👑 Guest List' : '🎫 Regular Entry'}`;
 
   public getFloor(): number {
     return this.currentFloor;
+  }
+
+  // Tier-based movement evolution
+  public evolveForTier(tier: number): void {
+    // Agent behavior evolves based on club's tier progression
+    const originalBehavior = this.getDefaultMovementBehavior(this.type);
+    
+    // Calculate evolution factor (0 = no change, 1 = complete transformation)
+    const evolutionFactor = Math.min(1, tier / 5); // Fully evolved at tier 5
+    
+    // Agents become more performative and less authentic as tier increases
+    if (originalBehavior === MovementBehavior.ORGANIC) {
+      if (tier >= 2 && Math.random() < evolutionFactor * 0.3) {
+        this.movementBehavior = MovementBehavior.ERRATIC; // Some authentic people become erratic
+      }
+      if (tier >= 4 && Math.random() < evolutionFactor * 0.2) {
+        this.movementBehavior = MovementBehavior.PERFORMATIVE; // Few become performative
+      }
+    } else if (originalBehavior === MovementBehavior.ERRATIC) {
+      if (tier >= 3 && Math.random() < evolutionFactor * 0.4) {
+        this.movementBehavior = MovementBehavior.PERFORMATIVE; // Curious people become performative
+      }
+    }
+    
+    // Tier-based stamina drain (higher tiers are more exhausting)
+    const tierStress = tier * 0.1;
+    this.stamina = Math.max(10, this.stamina - tierStress);
+    
+    // Social energy changes based on tier and agent type
+    if (this.type === 'authentic' || this.type === 'regular') {
+      // Authentic people lose social energy in commercialized environments
+      this.socialEnergy = Math.max(10, this.socialEnergy - (tier * 2));
+    } else if (this.type === 'tourist' || this.type === 'influencer') {
+      // Tourists/influencers gain energy in commercialized environments
+      this.socialEnergy = Math.min(100, this.socialEnergy + (tier * 1.5));
+    }
+    
+    // Entertainment changes based on personal preferences vs tier
+    if (this.type === 'authentic') {
+      // Authentic people are less entertained by commercial tiers
+      this.entertainment = Math.max(10, this.entertainment - (tier * 3));
+    } else if (this.type === 'tourist' || this.type === 'influencer') {
+      // Tourists love the spectacle of higher tiers
+      this.entertainment = Math.min(100, this.entertainment + (tier * 2));
+    }
+  }
+  
+  // Get tier-responsive movement speed
+  public getTierAdjustedSpeed(tier: number): number {
+    const baseSpeed = this.getMovementSpeed();
+    
+    // Higher tiers create more frantic energy
+    const tierMultiplier = 1 + (tier * 0.1); // 10% faster per tier
+    
+    // But authentic agents resist this pressure
+    let resistanceFactor = 1;
+    if (this.type === 'authentic') {
+      resistanceFactor = Math.max(0.7, 1 - (tier * 0.1)); // Get slower as tier increases
+    } else if (this.type === 'tourist' || this.type === 'influencer') {
+      resistanceFactor = 1 + (tier * 0.05); // Get faster with tier
+    }
+    
+    return baseSpeed * tierMultiplier * resistanceFactor;
+  }
+  
+  // Get tier-responsive pause duration
+  public getTierAdjustedPauseDuration(tier: number): number {
+    const basePause = this.getPauseDuration();
+    
+    // Higher tiers = less contemplative time
+    const tierFactor = Math.max(0.3, 1 - (tier * 0.15)); // Shorter pauses at higher tiers
+    
+    // Agent type resistance
+    let typeFactor = 1;
+    if (this.type === 'authentic') {
+      typeFactor = 1 + (tier * 0.1); // Authentic people take longer pauses to resist the pace
+    } else if (this.type === 'performative' || this.type === 'influencer') {
+      typeFactor = Math.max(0.2, 1 - (tier * 0.2)); // Very short pauses for performative types
+    }
+    
+    return basePause * tierFactor * typeFactor;
   }
 }

@@ -109,7 +109,7 @@ export class FloorLayout {
         id: AreaID.ENTRANCE,
         name: 'Entrance & Ticket Booth',
         floor: Floor.GROUND,
-        bounds: { x: 18, y: 25, width: 4, height: 4 },
+        bounds: { x: 18, y: 24, width: 4, height: 5 }, // More rectangular, moved up
         tileType: TileType.ENTRANCE,
         unlockTier: 0,
         isUnlocked: false,
@@ -247,14 +247,14 @@ export class FloorLayout {
       },
       {
         id: AreaID.BATHROOMS_FIRST,
-        name: 'Unisex Bathrooms (1st)',
+        name: 'Unisex Bathrooms (1st) - 8 Stalls',
         floor: Floor.FIRST,
-        bounds: { x: 31, y: 10, width: 3, height: 6 },
+        bounds: { x: 31, y: 10, width: 4, height: 8 }, // 4x8 = 32 tiles for 8 stalls
         tileType: TileType.TOILET,
         unlockTier: 0,
         isUnlocked: false,
         connections: [AreaID.BERGHAIN_DANCEFLOOR],
-        capacity: 20,
+        capacity: 48, // 8 stalls * 6 people max per stall
         revenueMultiplier: 0
       },
       {
@@ -327,14 +327,14 @@ export class FloorLayout {
       },
       {
         id: AreaID.BATHROOMS_SECOND,
-        name: 'Unisex Bathrooms (2nd)',
+        name: 'Panorama Bathrooms - 8 Stalls',
         floor: Floor.SECOND,
-        bounds: { x: 20, y: 21, width: 3, height: 3 },
+        bounds: { x: 29, y: 21, width: 4, height: 8 }, // 4x8 = 32 tiles for 8 stalls
         tileType: TileType.TOILET,
         unlockTier: 2,
         isUnlocked: false,
         connections: [AreaID.PANORAMA_DANCEFLOOR],
-        capacity: 15,
+        capacity: 48, // 8 stalls * 6 people max per stall
         revenueMultiplier: 0
       }
     ];

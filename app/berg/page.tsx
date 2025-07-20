@@ -752,24 +752,30 @@ export default function BergIncPage() {
         
         if (isInQueue) {
           // Queue agents: minimal behavior, stay in position
-          agent.update(deltaTime); // Just basic movement toward queue position
+          agent.update(deltaTime, gameState.tier); // Just basic movement toward queue position
         } else {
-          // Club agents: full AI behavior
-          // Simple needs decay
-          agent.stamina = Math.max(0, agent.stamina - (deltaTime / 10000));
-          agent.entertainment = Math.max(0, agent.entertainment - (deltaTime / 8000));
-          agent.socialEnergy = Math.max(0, agent.socialEnergy - (deltaTime / 12000));
+          // Club agents: full AI behavior with tier-based evolution
+          // Simple needs decay (adjusted by tier)
+          const tierStress = 1 + (gameState.tier * 0.1); // Higher tiers are more stressful
+          agent.stamina = Math.max(0, agent.stamina - (deltaTime / 10000) * tierStress);
+          agent.entertainment = Math.max(0, agent.entertainment - (deltaTime / 8000) * tierStress);
+          agent.socialEnergy = Math.max(0, agent.socialEnergy - (deltaTime / 12000) * tierStress);
           
           // Agent AI update - only every 2 seconds per agent
           const lastUpdate = agentLastUpdateRef.current.get(agent.id) || 0;
           if (now - lastUpdate > 2000) {
+            // Evolve agent behavior for current tier (small chance)
+            if (Math.random() < 0.05) {
+              agent.evolveForTier(gameState.tier);
+            }
+            
             updateAgentAI(agent, gameState, canvas);
             agentLastUpdateRef.current.set(agent.id, now);
             canvasNeedsRedrawRef.current = true;
           }
           
-          // Update agent movement (lightweight)
-          agent.update(deltaTime);
+          // Update agent movement with tier-responsive behavior
+          agent.update(deltaTime, gameState.tier);
         }
       }
     };
