@@ -104,7 +104,7 @@ export const TamaCard: React.FC<TamaCardProps> = ({ tama, onInteract }) => {
             <div key={need} className={`p-2 rounded text-xs ${getNeedColor(value)}`}>
               <div className="flex justify-between items-center mb-1">
                 <span className="font-medium capitalize">{need}</span>
-                <span>{value}</span>
+                <span>{Math.round(value * 10) / 10}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-1">
                 <div

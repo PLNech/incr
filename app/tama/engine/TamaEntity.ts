@@ -103,10 +103,10 @@ export class TamaEntity {
     // Update hours lived
     this.stats.hoursLived += hoursElapsed;
 
-    // Calculate decay rates (per hour)
-    const hungerDecayRate = 10 + (this.genetics.appetite / 10); // 11-20 per hour
-    const energyDecayRate = 8 + (100 - this.genetics.energy) / 10; // 8-18 per hour
-    const cleanlinessDecayRate = 5; // 5 per hour
+    // Calculate decay rates (per hour) - increased for demo
+    const hungerDecayRate = 50 + (this.genetics.appetite / 5); // 60-70 per hour
+    const energyDecayRate = 40 + (100 - this.genetics.energy) / 5; // 40-60 per hour
+    const cleanlinessDecayRate = 30; // 30 per hour
 
     // Apply decay
     this.needs.hunger = Math.max(0, this.needs.hunger - (hungerDecayRate * hoursElapsed));

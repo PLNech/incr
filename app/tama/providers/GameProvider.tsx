@@ -47,11 +47,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
         gameEngine.addEventListener(handleGameEvent);
 
-        // Set up periodic state sync
+        // Set up periodic state sync (faster for demo)
         const syncInterval = setInterval(() => {
           const currentState = gameEngine.getGameState();
           setGameState(currentState);
-        }, 1000);
+        }, 500);
 
         // Get initial game state
         const initialState = gameEngine.getGameState();

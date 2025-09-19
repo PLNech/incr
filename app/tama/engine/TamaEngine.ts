@@ -7,7 +7,7 @@ export class TamaEngine {
   private gameState: TamaGameState;
   private eventCallbacks: GameEventCallback[] = [];
   private gameLoop: NodeJS.Timeout | null = null;
-  private readonly TICK_INTERVAL = 1000; // 1 second
+  private readonly TICK_INTERVAL = 500; // 0.5 seconds for 2x speed
   private systemOrchestrator: SystemOrchestrator;
   private stateAdapter: TamaGameStateAdapter;
 

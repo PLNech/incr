@@ -147,14 +147,20 @@ function TamaGameContent() {
                 💾 Save Game
               </button>
               <button
+                className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-3 rounded text-sm transition-colors"
+                onClick={() => alert('🏠 Build Structures\n\nRequires: Level 2\nUnlock: Habitats & Workshops\n\nBuild Basic Habitat (50 🪙, 3 🪵) to house more Tamas, or Crafting Workshop for automation!')}
+              >
+                🏠 Build
+              </button>
+              <button
                 className="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-3 rounded text-sm transition-colors"
-                onClick={() => alert('Crafting system coming soon!')}
+                onClick={() => alert('🔨 Craft Items\n\nRequires: Level 3 + Crafting Workshop\nCost: 100 🪙, 5 🪵, 2 🪨\n\nUnlock basic recipes like Berry Snacks and Premium Food to keep your Tamas well-fed!')}
               >
                 🔨 Craft Items
               </button>
               <button
                 className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-3 rounded text-sm transition-colors"
-                onClick={() => alert('Contract system coming soon!')}
+                onClick={() => alert('📋 View Contracts\n\nRequires: Level 5 + 3 Tamas\nUnlock: Customer relationships\n\nEarn bonus 🪙 by completing jobs for various customers. Each customer has different preferences and payment rates!')}
               >
                 📋 View Contracts
               </button>

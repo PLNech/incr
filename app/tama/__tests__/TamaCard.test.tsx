@@ -67,15 +67,15 @@ describe('TamaCard', () => {
     it('should display Tama needs with progress bars', () => {
       render(<TamaCard tama={mockTama} onInteract={mockOnInteract} />);
 
-      // Should show need values (text is split across elements)
+      // Should show need values with percentage format
       expect(screen.getByText('hunger')).toBeInTheDocument();
-      expect(screen.getByText('85')).toBeInTheDocument();
+      expect(screen.getByText('85%')).toBeInTheDocument();
       expect(screen.getByText('happiness')).toBeInTheDocument();
-      expect(screen.getByText('90')).toBeInTheDocument();
+      expect(screen.getByText('90%')).toBeInTheDocument();
       expect(screen.getByText('energy')).toBeInTheDocument();
-      expect(screen.getByText('70')).toBeInTheDocument();
+      expect(screen.getByText('70%')).toBeInTheDocument();
       expect(screen.getByText('cleanliness')).toBeInTheDocument();
-      expect(screen.getByText('95')).toBeInTheDocument();
+      expect(screen.getByText('95%')).toBeInTheDocument();
     });
 
     it('should display Tama genetics information', () => {
@@ -126,8 +126,8 @@ describe('TamaCard', () => {
     it('should highlight low hunger with warning colors', () => {
       render(<TamaCard tama={mockHungryTama} onInteract={mockOnInteract} />);
 
-      // Should have warning styling for low hunger - find the container with the value
-      const hungerValue = screen.getByText('25');
+      // Should have warning styling for low hunger - find the container with the percentage value
+      const hungerValue = screen.getByText('25%');
       expect(hungerValue.closest('.bg-red-50')).toBeInTheDocument();
     });
 
