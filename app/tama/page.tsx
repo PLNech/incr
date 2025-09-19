@@ -9,6 +9,7 @@ import { WelcomeTutorial } from './components/WelcomeTutorial';
 import { NextGoalIndicator } from './components/NextGoalIndicator';
 import { Tooltip } from './components/Tooltip';
 import { SkillsModal } from './components/SkillsModal';
+import debugConsole from './debug/DebugConsole';
 
 interface Notification {
   id: string;
@@ -38,7 +39,7 @@ function TamaGameContent() {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  const handleTamaInteract = (tamaId: string, action: 'feed' | 'play' | 'clean') => {
+  const handleTamaInteract = (tamaId: string, action: 'feed' | 'play' | 'clean' | 'rest') => {
     if (engine && isLoaded) {
       engine.interactWithTama(tamaId, action);
       // Show XP gain notification
@@ -98,7 +99,10 @@ function TamaGameContent() {
 
   // Tutorial system - check if first time user
   useEffect(() => {
-    if (isLoaded && gameState) {
+    if (isLoaded && gameState && engine) {
+      // Set up debug console
+      debugConsole.setEngine(engine);
+
       const tutorialCompleted = localStorage.getItem('tama_tutorial_completed');
       const isFirstTime = gameState.progression.level === 1 &&
                          gameState.progression.experience <= 10 &&
@@ -106,9 +110,12 @@ function TamaGameContent() {
 
       if (!tutorialCompleted && isFirstTime) {
         setTimeout(() => setShowTutorial(true), 1000); // Show after 1 second delay
+      } else if (!tutorialCompleted) {
+        // Show debug info for returning players
+        console.log('🐾 Tama Bokujō Debug Console ready! Type "debug.help()" or "tamaDebug.help()" for commands');
       }
     }
-  }, [isLoaded, gameState]);
+  }, [isLoaded, gameState, engine]);
 
   const handleTutorialComplete = () => {
     setShowTutorial(false);

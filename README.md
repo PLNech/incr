@@ -9,8 +9,21 @@ A collection of interconnected incremental games built with Next.js and deployed
 
 ## Current Games
 
+### 🐾 Tama Bokujō (BETA)
+Raise adorable Tamas on your virtual ranch! A comprehensive creature care and ranch management game featuring:
+
+- **Complete Care System**: Feed, play, clean, and **rest** your Tamas to meet their needs
+- **Skills & Specialization**: Choose between Caretaker, Breeder, or Entrepreneur paths
+- **Progressive Unlocks**: Buildings, crafting, contracts, and prestige system
+- **Interactive Tutorial**: 5-step guided onboarding for new players
+- **Smart Guidance**: Next goal indicators show exactly what to do
+- **Full Test Coverage**: 149+ automated tests ensure stability
+
+**Debug Console Available**: Open browser console and type `debug.help()` for testing commands
+
 ### NEXT BIG PROJECT: Le BergInc:tm:
 TODO: DEVELOP BERGHAIN INCREMENTAL
+
 ### ☕ Slow Roast
 Build a specialty coffee empire in Amsterdam! Start with a small café and grow into a coffee culture influencer. Features:
 - **Resource Management**: Coffee beans, money, reputation, knowledge, and more
@@ -141,6 +154,48 @@ To add a new game to the framework:
 - **Mobile Friendly**: Responsive design for all screen sizes
 - **Offline Capable**: Games work without internet after initial load
 - **Performance**: Optimized builds with static generation
+
+## Developer & Debug Features
+
+### Tama Bokujō Debug Console
+
+For developers and testers, Tama Bokujō includes a comprehensive debug console accessible via browser developer tools:
+
+```javascript
+// Open browser console (F12) and use these commands:
+
+// Quick progression shortcuts
+debug.skipToMidGame()       // Jump to level 15 with boosted resources
+debug.skipToLateGame()      // Jump to level 40 with elite setup
+debug.prepareForPrestige()  // Setup conditions for first prestige
+
+// Manual adjustments
+debug.addXP(1000)           // Add experience points
+debug.setLevel(25)          // Set player level directly
+debug.addSkillPoints(50)    // Add skill points for testing skills
+debug.addCoins(10000)       // Add Tama coins
+debug.addAllResources(1000) // Add all resources with multiplier
+
+// Tama management
+debug.boostAllTamas()       // Max out all current Tamas
+debug.createSuperTama('EliteTama') // Create level 25, tier 3 Tama
+
+// Utility commands
+debug.showGameState()       // Display current progress
+debug.help()                // Show all available commands
+debug.resetGame()           // Reset everything (with confirmation)
+```
+
+**Access Methods:**
+- Type `debug.help()` or `tamaDebug.help()` in browser console
+- Console automatically announces availability when game loads
+- Available only in Tama Bokujō game page
+
+**Use Cases:**
+- Test late game mechanics without grinding
+- QA testing of progression systems
+- Content creator demonstrations
+- Bug reproduction and testing
 
 ## Contributing
 

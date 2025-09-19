@@ -59,11 +59,11 @@ export const TamaCard: React.FC<TamaCardProps> = ({ tama, onInteract }) => {
   const speciesEmoji = getSpeciesEmoji(tama.species);
   const tierColor = getTierColor(tama.tier);
 
-  const handleInteract = (action: 'feed' | 'play' | 'clean') => {
+  const handleInteract = (action: 'feed' | 'play' | 'clean' | 'rest') => {
     onInteract(tama.id, action);
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent, action: 'feed' | 'play' | 'clean') => {
+  const handleKeyDown = (event: React.KeyboardEvent, action: 'feed' | 'play' | 'clean' | 'rest') => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       handleInteract(action);
@@ -165,6 +165,14 @@ export const TamaCard: React.FC<TamaCardProps> = ({ tama, onInteract }) => {
           className="flex-1 bg-purple-500 hover:bg-purple-600 text-white text-sm py-2 px-3 rounded transition-colors"
         >
           🧽 Clean
+        </button>
+        <button
+          onClick={() => handleInteract('rest')}
+          onKeyDown={(e) => handleKeyDown(e, 'rest')}
+          aria-label={`Help ${tama.name} rest`}
+          className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white text-sm py-2 px-3 rounded transition-colors"
+        >
+          😴 Rest
         </button>
         <button
           onClick={() => setExpanded(!expanded)}

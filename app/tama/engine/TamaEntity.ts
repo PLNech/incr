@@ -192,6 +192,30 @@ export class TamaEntity {
     };
   }
 
+  rest(bedType?: string): InteractionResult {
+    const bedEffects: Record<string, { energy: number; happiness: number; experience: number }> = {
+      'basic_bed': { energy: 35, happiness: 5, experience: 1 },
+      'cozy_bed': { energy: 50, happiness: 10, experience: 2 },
+      'luxury_bed': { energy: 70, happiness: 15, experience: 3 }
+    };
+
+    const bed = bedEffects[bedType || 'basic_bed'] || bedEffects['basic_bed'];
+
+    this.needs.energy = Math.min(100, this.needs.energy + bed.energy);
+    this.needs.happiness = Math.min(100, this.needs.happiness + bed.happiness);
+
+    this.gainExperience(bed.experience);
+    this.stats.totalInteractions++;
+    this.lastInteraction = Date.now();
+
+    return {
+      success: true,
+      message: `${this.name} had a refreshing rest! 😴`,
+      experienceGained: bed.experience,
+      needsChanged: { energy: bed.energy, happiness: bed.happiness }
+    };
+  }
+
   gainExperience(amount: number): void {
     this.experience += amount;
 
