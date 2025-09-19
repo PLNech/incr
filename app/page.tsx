@@ -35,6 +35,15 @@ const GAMES: GameInfo[] = [
     url: '/berg'
   },
   {
+    id: 'tama',
+    title: 'Tama Bokujō',
+    description: 'Raise adorable Tamas on your virtual ranch! Care for their needs, craft items, complete contracts, and discover rare species through genetics and breeding.',
+    emoji: '🐾',
+    status: 'available',
+    githubUrl: 'https://github.com/PLNech/incr/',
+    url: '/tama'
+  },
+  {
     id: 'mystery-game',
     title: '???',
     description: 'might reveal more if you play Slow Roast...',
