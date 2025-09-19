@@ -34,3 +34,6 @@ global.performance = {
 // Mock requestAnimationFrame
 global.requestAnimationFrame = jest.fn(cb => setTimeout(cb, 16))
 global.cancelAnimationFrame = jest.fn()
+
+// Add React Testing Library jest-dom matchers
+import '@testing-library/jest-dom';
