@@ -32,7 +32,8 @@ describe('ProgressionSystem', () => {
 
       progressionSystem.grantExperience(gameState, 'tama_interaction', 20);
 
-      expect(gameState.progression.level).toBe(2);
+      // With new reduced curve, 110 XP (90+20) gets to level 4
+      expect(gameState.progression.level).toBe(4);
     });
 
     it('should calculate experience requirements correctly', () => {

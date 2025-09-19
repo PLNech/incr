@@ -56,6 +56,36 @@ export const ACHIEVEMENTS: Achievement[] = [
 
 export const MILESTONES: Milestone[] = [
   {
+    level: 2,
+    name: 'First Steps',
+    description: 'Your ranch is growing!',
+    rewards: {
+      skillPoints: 1,
+      tamaCoins: 50,
+      unlocks: ['crafting_workshop']
+    }
+  },
+  {
+    level: 3,
+    name: 'Getting Serious',
+    description: 'You\'re learning the ropes',
+    rewards: {
+      skillPoints: 1,
+      tamaCoins: 100,
+      unlocks: ['auto_feeder']
+    }
+  },
+  {
+    level: 4,
+    name: 'Ranch Manager',
+    description: 'Time to expand operations',
+    rewards: {
+      skillPoints: 2,
+      tamaCoins: 200,
+      unlocks: ['luxury_habitat']
+    }
+  },
+  {
     level: 5,
     name: 'Specialization Choice',
     description: 'Choose your specialization path',
@@ -275,6 +305,6 @@ export const PRESTIGE_REQUIREMENTS = {
   minTier3Count: 2
 };
 
-export const EXPERIENCE_CURVE_BASE = 100;
-export const EXPERIENCE_CURVE_MULTIPLIER = 1.5;
+export const EXPERIENCE_CURVE_BASE = 25; // Reduced from 100 for faster early game
+export const EXPERIENCE_CURVE_MULTIPLIER = 1.3; // Reduced from 1.5 for gentler curve
 export const PRESTIGE_POINT_MULTIPLIER = 0.1;

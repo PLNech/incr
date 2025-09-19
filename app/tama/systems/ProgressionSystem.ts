@@ -89,27 +89,24 @@ export class ProgressionSystem {
     this.checkAchievements(gameState);
   }
 
-  private calculateLevelFromExperience(experience: number): number {
-    if (experience === 0) return 1;
-
-    let level = 1;
-    let totalExpRequired = 0;
-
-    while (true) {
-      const expForNextLevel = this.getExperienceRequiredForLevel(level + 1);
-      if (totalExpRequired + expForNextLevel > experience) {
-        break;
-      }
-      totalExpRequired += expForNextLevel;
-      level++;
-    }
-
-    return level;
-  }
 
   getExperienceRequiredForLevel(level: number): number {
     if (level <= 1) return 0;
     return Math.floor(EXPERIENCE_CURVE_BASE * Math.pow(level - 1, EXPERIENCE_CURVE_MULTIPLIER));
+  }
+
+  private calculateLevelFromExperience(experience: number): number {
+    if (experience <= 0) return 1;
+
+    // Calculate level based on experience using inverse of the curve
+    // For early levels, use simplified calculation
+    let level = 1;
+    while (this.getExperienceRequiredForLevel(level + 1) <= experience) {
+      level++;
+      // Safety check to prevent infinite loops
+      if (level > 100) break;
+    }
+    return level;
   }
 
   private calculateSkillPointsForLevel(level: number): number {

@@ -13,9 +13,20 @@ interface GameInfo {
   unlockRequirement?: string;
   githubUrl?: string;
   url?: string;
+  badge?: 'beta' | 'new' | 'updated';
 }
 
 const GAMES: GameInfo[] = [
+  {
+    id: 'tama',
+    title: 'Tama Bokujō',
+    description: 'Raise adorable Tamas on your virtual ranch! Care for their needs, craft items, complete contracts, and discover rare species through genetics and breeding.',
+    emoji: '🐾',
+    status: 'available',
+    githubUrl: 'https://github.com/PLNech/incr/',
+    url: '/tama',
+    badge: 'beta'
+  },
   {
     id: 'slow-roast',
     title: 'Slow Roast',
@@ -33,15 +44,6 @@ const GAMES: GameInfo[] = [
     status: 'available',
     githubUrl: 'https://github.com/PLNech/incr/',
     url: '/berg'
-  },
-  {
-    id: 'tama',
-    title: 'Tama Bokujō',
-    description: 'Raise adorable Tamas on your virtual ranch! Care for their needs, craft items, complete contracts, and discover rare species through genetics and breeding.',
-    emoji: '🐾',
-    status: 'available',
-    githubUrl: 'https://github.com/PLNech/incr/',
-    url: '/tama'
   },
   {
     id: 'mystery-game',
@@ -133,7 +135,16 @@ export default function HomePage() {
             const gameState = gameStates.find(g => g.gameId === game.id);
             
             return (
-              <div key={game.id} className={`game-card ${game.id === 'mystery-game' ? 'opacity-50 blur-sm' : ''}`}>
+              <div key={game.id} className={`game-card ${game.id === 'mystery-game' ? 'opacity-50 blur-sm' : ''} relative`}>
+                {game.badge && (
+                  <div className={`absolute top-4 right-4 px-2 py-1 text-xs font-bold rounded-full ${
+                    game.badge === 'beta' ? 'bg-blue-500 text-white' :
+                    game.badge === 'new' ? 'bg-green-500 text-white' :
+                    'bg-yellow-500 text-black'
+                  }`}>
+                    {game.badge.toUpperCase()}
+                  </div>
+                )}
                 <div className="text-4xl mb-4">{game.emoji}</div>
                 <h3 className="text-xl font-bold mb-2">{game.title}</h3>
                 <p className="text-gray-300 mb-4">{game.description}</p>
