@@ -11,7 +11,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run export` - Build and export static files (used for GitHub Pages)
 
 ### Linting and Type Checking
-No specific lint or typecheck commands configured. TypeScript compilation errors will show during `npm run build`.
+- `npm run lint` - Run ESLint with Next.js configuration
+- TypeScript compilation errors will show during `npm run build`
 
 ## Architecture Overview
 
@@ -27,10 +28,23 @@ No specific lint or typecheck commands configured. TypeScript compilation errors
 ```
 app/                     # Next.js App Router pages
 ├── layout.tsx          # Root layout with navigation
-├── page.tsx            # Game hub homepage  
+├── page.tsx            # Game hub homepage
 ├── globals.css         # Global styles and Tailwind imports
-└── slow-roast/         # Game-specific pages
-    └── page.tsx        # Slow Roast game page
+├── slow-roast/         # Slow Roast coffee game
+│   └── page.tsx        # Game page and components
+└── berg/               # BergInc nightclub incremental game
+    ├── page.tsx        # Main game interface
+    ├── types.ts        # Game state and type definitions
+    ├── utils.ts        # Core game mechanics
+    ├── quotes.ts       # Dynamic quote system
+    ├── audio.ts        # Procedural audio generation
+    ├── test-runner.ts  # Comprehensive test suite
+    └── core/           # Modular game systems
+        ├── engine/     # Core game engine
+        ├── agents/     # Agent behavior system
+        ├── systems/    # ECS-style game systems
+        ├── map/        # Floor layouts and pathfinding
+        └── rendering/  # Visual rendering systems
 
 lib/                    # Core game logic and utilities
 ├── gameStateManager.ts # Cross-game state management system
@@ -122,9 +136,10 @@ components/             # Reusable UI components
 - **Ensure tests pass** before committing any code
 
 ### Testing Commands
-- `npm run test` - Run all unit tests
+- `npm run test` - Run Jest unit tests
+- `npm run test:watch` - Run Jest tests in watch mode during development
 - `npm run test:e2e` - Run Playwright end-to-end tests
-- `npm run test:watch` - Run tests in watch mode during development
+- `npm run test:berg` - Run BergInc comprehensive test suite
 - **CRITICAL**: Tests must pass before any deployment or feature completion
 
 ### Testing Strategy
@@ -134,20 +149,34 @@ components/             # Reusable UI components
 - **Performance testing**: Verify games run smoothly under load
 - **Cross-browser testing**: Ensure compatibility across browsers
 
-### BergInc Testing Focus
-- **Revenue progression**: Verify money increases over time
-- **UI interactions**: Test all buttons, modals, and navigation
-- **Multi-floor system**: Ensure agents move between floors correctly
-- **Queue mechanics**: Test queue formation and entry rejection
-- **Area unlocking**: Verify areas unlock at correct tiers
-- **Audio/visual effects**: Test theme changes and animations
+### BergInc Testing Architecture
+BergInc features a comprehensive test suite with modular testing:
+- **Core Systems**: Each system (agents, pathfinding, queues) has individual test files
+- **Integration Tests**: Full game engine integration testing
+- **Headless Testing**: Game logic separated from UI for automated testing
+- **Performance Testing**: Crowd simulation performance bounds verification
+- **Visual Regression**: Theme and aesthetic progression validation
+- **Manual Test Runners**: Node.js scripts for specific system validation
 
-## Next Steps for BERG Project
-The README indicates the next major project is "Le BergInc" - a Berghain-themed incremental game. When implementing:
-- **Write tests first** using TDD methodology
-- Follow the same modular game architecture
-- Create new directory `app/berg/` 
-- Add game logic in `lib/bergTypes.ts` and `lib/bergUtils.ts`
-- Use the cross-game state system for unlock mechanics
-- **Test everything** - unit tests, integration tests, E2E tests
-- **Verify test coverage** before considering features complete
+### BergInc Game Architecture
+- **ECS Pattern**: Entity-Component-System architecture for game objects
+- **Modular Systems**: Independent systems for visitors, queues, reputation, etc.
+- **Headless Engine**: Game logic completely separate from React UI
+- **Grid-Based Movement**: Pathfinding system with floor layouts
+- **Dynamic Theming**: Visual themes evolve as club becomes more commercial
+- **Procedural Audio**: Generated audio loops that change with game progression
+- **Quote System**: Contextual quotes that reflect the club's transformation
+
+## Response Protocol
+
+### Structured Responses
+When providing options, analysis, or complex information, use numbered lists with 1-4 levels to offer mindmap-like tree-structured responses:
+1. **Main Topic**
+   1. Sub-point
+   2. Another sub-point
+      1. Detail
+      2. Another detail
+2. **Second Main Topic**
+   1. Sub-point with details
+
+This hierarchical structure helps organize complex information and makes it easier to navigate design decisions and implementation details.
