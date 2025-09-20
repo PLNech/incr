@@ -11,12 +11,14 @@ import { Tooltip } from './components/Tooltip';
 import { SkillsModal } from './components/SkillsModal';
 import { BuildingsModal } from './components/BuildingsModal';
 import { CraftingModal } from './components/CraftingModal';
-import { ContractsModal } from './components/ContractsModal';
+import { SimpleContractsModal } from './components/SimpleContractsModal';
 import { SaveMenuModal } from './components/SaveMenuModal';
 import { AdventureModal } from './components/AdventureModal';
 import { GardenView } from './components/GardenView';
 import { CompensationModal } from './components/CompensationModal';
 import { CompensationManager } from './services/CompensationManager';
+import { SimpleContractManager } from './systems/SimpleContractManager';
+import { SimpleContract } from './types-simple-contracts';
 import debugConsole from './debug/DebugConsole';
 
 interface Notification {
@@ -38,6 +40,9 @@ function TamaGameContent() {
   const [showAdventureModal, setShowAdventureModal] = useState<boolean>(false);
   const [currentView, setCurrentView] = useState<'pets' | 'garden'>('pets');
   const [compensationData, setCompensationData] = useState<any>(null);
+  const [contractManager] = useState(() => new SimpleContractManager());
+  const [availableContracts, setAvailableContracts] = useState<SimpleContract[]>([]);
+  const [activeContracts, setActiveContracts] = useState<SimpleContract[]>([]);
 
   const addNotification = (message: string, type: 'xp' | 'levelup' | 'achievement' | 'info' = 'info', duration = 3000) => {
     const notification: Notification = {
@@ -146,6 +151,45 @@ function TamaGameContent() {
 
   const handleTutorialComplete = () => {
     addNotification('🎓 Tutorial complete! Ready to start your ranch!', 'info', 4000);
+  };
+
+  // Initialize contracts when game loads
+  useEffect(() => {
+    if (isLoaded && availableContracts.length === 0) {
+      const contracts = contractManager.generateAvailableContracts(3);
+      setAvailableContracts(contracts);
+    }
+  }, [isLoaded, contractManager, availableContracts.length]);
+
+  // Update contract progress
+  useEffect(() => {
+    if (gameState) {
+      contractManager.updateContractProgress(gameState);
+      setActiveContracts(contractManager.getActiveContracts());
+    }
+  }, [gameState, contractManager]);
+
+  const handleAcceptContract = (contractId: string) => {
+    const contract = contractManager.acceptContract(contractId);
+    if (contract) {
+      setAvailableContracts(contractManager.getAvailableContracts());
+      setActiveContracts(contractManager.getActiveContracts());
+      addNotification(`📋 Contract accepted: ${contract.title}`, 'info', 3000);
+    }
+  };
+
+  const handleSellResources = (contractId: string, resourceType: string, quantity: number) => {
+    if (gameState && contractManager.sellResourcesForContract(contractId, resourceType, quantity, gameState)) {
+      addNotification(`💰 Sold ${quantity} ${resourceType} for contract`, 'info', 2000);
+      // State will update through the game loop
+    }
+  };
+
+  const handleSubmitCraftedItem = (contractId: string, itemId: string, quantity: number) => {
+    if (gameState && contractManager.submitCraftedItem(contractId, itemId, quantity, gameState)) {
+      addNotification(`📦 Submitted ${quantity} ${itemId.replace('_', ' ')} for contract`, 'info', 2000);
+      // State will update through the game loop
+    }
   };
 
   if (!isLoaded) {
@@ -440,16 +484,15 @@ function TamaGameContent() {
                 🔨 Craft Items {gameState.progression.level < 3 ? '(Lv.3 req)' : ''}
               </button>
               <button
-                className={`w-full py-2 px-3 rounded text-sm transition-colors ${
-                  gameState.progression.level >= 5 && gameState.tamas.length >= 3
-                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                }`}
-                onClick={() => gameState.progression.level >= 5 && gameState.tamas.length >= 3 ? setShowContractsModal(true) : null}
-                disabled={gameState.progression.level < 5 || gameState.tamas.length < 3}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-3 rounded text-sm transition-colors flex items-center justify-center gap-2"
+                onClick={() => setShowContractsModal(true)}
               >
-                📋 View Contracts {(gameState.progression.level < 5 || gameState.tamas.length < 3) ?
-                  `(${gameState.progression.level < 5 ? `Lv.${gameState.progression.level}/5` : `${gameState.tamas.length}/3 Tamas`})` : ''}
+                📋 Contracts
+                {activeContracts.length > 0 && (
+                  <span className="bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                    {activeContracts.length}
+                  </span>
+                )}
               </button>
               <button
                 className={`w-full py-2 px-3 rounded text-sm transition-colors ${
@@ -519,12 +562,15 @@ function TamaGameContent() {
       />
 
       {/* Contracts System */}
-      <ContractsModal
+      <SimpleContractsModal
         isVisible={showContractsModal}
         onClose={() => setShowContractsModal(false)}
         gameState={gameState}
-        engine={engine}
-        onNotification={addNotification}
+        onAcceptContract={handleAcceptContract}
+        onSellResources={handleSellResources}
+        onSubmitCraftedItem={handleSubmitCraftedItem}
+        availableContracts={availableContracts}
+        activeContracts={activeContracts}
       />
 
       {/* Save Management System */}

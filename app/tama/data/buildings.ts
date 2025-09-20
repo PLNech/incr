@@ -75,7 +75,8 @@ export const BUILDING_TYPES: BuildingType[] = [
     category: 'workshop',
     cost: {
       tamaCoins: 80,
-      wood: 4
+      wood: 4,
+      stone: 1
     },
     effects: {
       passiveIncome: {
@@ -94,6 +95,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     cost: {
       tamaCoins: 150,
       wood: 6,
+      stone: 2,
       berries: 20
     },
     effects: {
@@ -109,7 +111,9 @@ export const BUILDING_TYPES: BuildingType[] = [
     description: 'A prestige building that provides global multipliers',
     category: 'prestige',
     cost: {
-      evolutionCrystals: 5
+      tamaCoins: 2000,
+      evolutionCrystals: 5,
+      happinessStars: 50
     },
     effects: {
       globalMultiplier: 1.5
