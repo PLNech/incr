@@ -5,6 +5,8 @@ import { TamaGameState, Building, BuildingType } from '../types';
 import { TamaEngine } from '../engine/TamaEngine';
 import { BUILDING_TYPES } from '../data/buildings';
 import { useEscapeKey } from '../hooks/useEscapeKey';
+import { TutorialOverlay } from './TutorialOverlay';
+import { TUTORIAL_STEPS } from '../data/tutorialSteps';
 
 interface BuildingsModalProps {
   isVisible: boolean;
@@ -22,6 +24,7 @@ export const BuildingsModal: React.FC<BuildingsModalProps> = ({
   onNotification
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showTutorial, setShowTutorial] = useState<boolean>(false);
 
   useEscapeKey(onClose, isVisible);
 
@@ -91,16 +94,25 @@ export const BuildingsModal: React.FC<BuildingsModalProps> = ({
       <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">🏗️ Buildings</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-xl"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowTutorial(true)}
+              className="text-blue-500 hover:text-blue-700 text-sm px-2 py-1 rounded hover:bg-blue-50"
+              title="Show tutorial"
+            >
+              ❓ Help
+            </button>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 text-xl"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Category Filter */}
-        <div className="mb-4">
+        <div className="mb-4" data-tutorial="building-categories">
           <div className="flex gap-2 overflow-x-auto pb-2">
             {categories.map(category => (
               <button
@@ -194,8 +206,8 @@ export const BuildingsModal: React.FC<BuildingsModalProps> = ({
                       <p className="text-sm text-gray-600 mb-3">{buildingType.description}</p>
 
                       <div className="text-xs text-gray-500 mb-3">
-                        <div>Cost: {formatCost(buildingType.cost)}</div>
-                        <div className="mt-1">
+                        <div data-tutorial="building-cost">Cost: {formatCost(buildingType.cost)}</div>
+                        <div className="mt-1" data-tutorial="building-effects">
                           Effects: {Object.entries(buildingType.effects).map(([key, value]) =>
                             `${key.replace(/([A-Z])/g, ' $1').toLowerCase()}: +${value}`
                           ).join(', ')}
@@ -228,6 +240,14 @@ export const BuildingsModal: React.FC<BuildingsModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Tutorial Overlay */}
+      <TutorialOverlay
+        isVisible={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        steps={TUTORIAL_STEPS.buildings}
+        modalType="buildings"
+      />
     </div>
   );
 };

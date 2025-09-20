@@ -170,6 +170,10 @@ export interface Milestone {
     skillPoints: number;
     unlocks?: string[];
     tamaCoins?: number;
+    berries?: number;
+    wood?: number;
+    stone?: number;
+    happinessStars?: number;
   };
 }
 
@@ -295,7 +299,10 @@ export interface TamaGameState {
     totalContractsCompleted: number;
     totalItemsCrafted: number;
     prestigeCount: number;
+    completedAdventures?: string[]; // Adventure location IDs
   };
+  inventory?: Record<string, number>; // Adventure items and other inventory
+  activeAdventures?: ActiveAdventure[]; // Currently running adventures
   lastUpdate: number;
 }
 
@@ -309,3 +316,21 @@ export interface GameEvent {
 }
 
 export type GameEventCallback = (event: GameEvent) => void;
+
+// Adventure system types
+export interface ActiveAdventure {
+  id: string;
+  locationId: string;
+  tamaId: string;
+  startTime: number;
+  endTime: number;
+  successRate: number;
+  potentialRewards: AdventureReward[];
+}
+
+export interface AdventureReward {
+  type: 'resource' | 'item' | 'experience' | 'achievement';
+  id: string;
+  quantity: number;
+  weight: number;
+}

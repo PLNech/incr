@@ -5,7 +5,7 @@ import { GameProvider, useGameContext } from './providers/GameProvider';
 import { ResourceBar } from './components/ResourceBar';
 import { TamaCard } from './components/TamaCard';
 import { NotificationToast } from './components/NotificationToast';
-import { WelcomeTutorial } from './components/WelcomeTutorial';
+import { FirstTimeExperience } from './components/FirstTimeExperience';
 import { NextGoalIndicator } from './components/NextGoalIndicator';
 import { Tooltip } from './components/Tooltip';
 import { SkillsModal } from './components/SkillsModal';
@@ -13,6 +13,10 @@ import { BuildingsModal } from './components/BuildingsModal';
 import { CraftingModal } from './components/CraftingModal';
 import { ContractsModal } from './components/ContractsModal';
 import { SaveMenuModal } from './components/SaveMenuModal';
+import { AdventureModal } from './components/AdventureModal';
+import { GardenView } from './components/GardenView';
+import { CompensationModal } from './components/CompensationModal';
+import { CompensationManager } from './services/CompensationManager';
 import debugConsole from './debug/DebugConsole';
 
 interface Notification {
@@ -26,12 +30,14 @@ function TamaGameContent() {
   const { gameState, engine, isLoaded, events } = useGameContext();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [lastLevel, setLastLevel] = useState<number>(1);
-  const [showTutorial, setShowTutorial] = useState<boolean>(false);
   const [showSkillsModal, setShowSkillsModal] = useState<boolean>(false);
   const [showBuildingsModal, setShowBuildingsModal] = useState<boolean>(false);
   const [showCraftingModal, setShowCraftingModal] = useState<boolean>(false);
   const [showContractsModal, setShowContractsModal] = useState<boolean>(false);
   const [showSaveMenuModal, setShowSaveMenuModal] = useState<boolean>(false);
+  const [showAdventureModal, setShowAdventureModal] = useState<boolean>(false);
+  const [currentView, setCurrentView] = useState<'pets' | 'garden'>('pets');
+  const [compensationData, setCompensationData] = useState<any>(null);
 
   const addNotification = (message: string, type: 'xp' | 'levelup' | 'achievement' | 'info' = 'info', duration = 3000) => {
     const notification: Notification = {
@@ -57,7 +63,7 @@ function TamaGameContent() {
         clean: '🧽',
         wakeUp: '👁️'
       };
-      const xpGain = action === 'wakeUp' ? 1 : 5; // Wake up gives less XP
+      const xpGain = action === 'wakeUp' ? 1 : 6; // Wake up gives less XP
       addNotification(`${actionEmojis[action]} +${xpGain} XP`, 'xp', 2000);
     }
   };
@@ -125,14 +131,13 @@ function TamaGameContent() {
       // Set up debug console
       debugConsole.setEngine(engine);
 
-      const tutorialCompleted = localStorage.getItem('tama_tutorial_completed');
-      const isFirstTime = gameState.progression.level === 1 &&
-                         gameState.progression.experience <= 10 &&
-                         gameState.tamas.length === 0;
+      // Set up compensation manager callback
+      CompensationManager.getInstance().setCallback((data) => {
+        setCompensationData(data);
+      });
 
-      if (!tutorialCompleted && isFirstTime) {
-        setTimeout(() => setShowTutorial(true), 1000); // Show after 1 second delay
-      } else if (!tutorialCompleted) {
+      const tutorialCompleted = localStorage.getItem('tama_tutorial_completed');
+      if (tutorialCompleted) {
         // Show debug info for returning players
         console.log('🐾 Tama Bokujō Debug Console ready! Type "debug.help()" or "tamaDebug.help()" for commands');
       }
@@ -140,8 +145,6 @@ function TamaGameContent() {
   }, [isLoaded, gameState, engine]);
 
   const handleTutorialComplete = () => {
-    setShowTutorial(false);
-    localStorage.setItem('tama_tutorial_completed', 'true');
     addNotification('🎓 Tutorial complete! Ready to start your ranch!', 'info', 4000);
   };
 
@@ -175,7 +178,36 @@ function TamaGameContent() {
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <h2 className="text-2xl font-bold text-gray-800">Your Tamas</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-gray-800">Your Tamas</h2>
+
+                {/* Garden/Pet View Toggle - only show if 5+ Tamas */}
+                {gameState.tamas.length >= 5 && (
+                  <div className="flex bg-gray-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setCurrentView('pets')}
+                      className={`px-3 py-1 text-sm rounded-md transition-all ${
+                        currentView === 'pets'
+                          ? 'bg-white shadow text-blue-600 font-medium'
+                          : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    >
+                      🐾 Pets
+                    </button>
+                    <button
+                      onClick={() => setCurrentView('garden')}
+                      className={`px-3 py-1 text-sm rounded-md transition-all ${
+                        currentView === 'garden'
+                          ? 'bg-white shadow text-green-600 font-medium'
+                          : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                      title="Garden View - See autonomous behavior and relationships"
+                    >
+                      🌱 Garden
+                    </button>
+                  </div>
+                )}
+              </div>
               {gameState.tamas.length > 0 && (
                 <div className="flex items-center gap-2">
                   {(() => {
@@ -264,7 +296,7 @@ function TamaGameContent() {
                 🐾 Create Your First Tama
               </button>
             </div>
-          ) : (
+          ) : currentView === 'pets' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {gameState.tamas.map((tama) => (
                 <TamaCard
@@ -275,6 +307,8 @@ function TamaGameContent() {
                 />
               ))}
             </div>
+          ) : (
+            <GardenView gameState={gameState} engine={engine} />
           )}
         </div>
 
@@ -418,8 +452,23 @@ function TamaGameContent() {
                   `(${gameState.progression.level < 5 ? `Lv.${gameState.progression.level}/5` : `${gameState.tamas.length}/3 Tamas`})` : ''}
               </button>
               <button
+                className={`w-full py-2 px-3 rounded text-sm transition-colors ${
+                  gameState.progression.level >= 4
+                    ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                }`}
+                onClick={() => gameState.progression.level >= 4 ? setShowAdventureModal(true) : null}
+                disabled={gameState.progression.level < 4}
+              >
+                🗺️ Adventures {gameState.progression.level < 4 ? '(Lv.4 req)' : ''}
+              </button>
+              <button
                 className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm transition-colors"
-                onClick={() => setShowTutorial(true)}
+                onClick={() => {
+                  // Reset tutorial completion to replay tutorial
+                  localStorage.removeItem('tama_tutorial_completed');
+                  window.location.reload(); // Simple way to reset and show tutorial again
+                }}
               >
                 ❓ Help & Tutorial
               </button>
@@ -435,8 +484,10 @@ function TamaGameContent() {
       />
 
       {/* Tutorial System */}
-      <WelcomeTutorial
-        isVisible={showTutorial}
+      <FirstTimeExperience
+        gameState={gameState}
+        engine={engine}
+        onCreateTama={handleCreateTama}
         onComplete={handleTutorialComplete}
       />
 
@@ -483,6 +534,24 @@ function TamaGameContent() {
         engine={engine}
         onNotification={addNotification}
       />
+
+      {/* Adventure System */}
+      <AdventureModal
+        isVisible={showAdventureModal}
+        onClose={() => setShowAdventureModal(false)}
+        gameState={gameState}
+        engine={engine}
+        onNotification={addNotification}
+      />
+
+      {/* Compensation System */}
+      {compensationData && (
+        <CompensationModal
+          isVisible={!!compensationData}
+          onClose={() => setCompensationData(null)}
+          compensationData={compensationData}
+        />
+      )}
     </div>
   );
 }

@@ -126,14 +126,20 @@ components/             # Reusable UI components
 
 ## Testing Requirements
 
-### Test-Driven Development (TDD)
-- **ALWAYS write tests first** before implementing features
+### Test-Driven Development (TDD) - MANDATORY
+- **🚨 CRITICAL: ALWAYS write tests first** before implementing ANY features
+- **🚨 NO EXCEPTIONS: Follow red-green-refactor cycle strictly**
+  1. Write a failing test (RED)
+  2. Write minimal code to make it pass (GREEN)
+  3. Refactor and improve (REFACTOR)
+  4. Repeat for next feature
 - **Unit tests** for all game logic and utility functions
 - **Integration tests** for component interactions
 - **End-to-end tests** for user workflows using Playwright
 - **Run tests frequently** during development - test early, test often
 - **Test all edge cases** and error conditions
 - **Ensure tests pass** before committing any code
+- **🔥 VIOLATION WARNING**: Writing implementation before tests violates core methodology
 
 ### Testing Commands
 - `npm run test` - Run Jest unit tests

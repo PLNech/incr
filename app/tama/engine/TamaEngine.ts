@@ -1,7 +1,10 @@
 import { TamaGameState, GameEvent, GameEventCallback, TamaData, TamaTier } from '../types';
+import { AdvancedTamaData } from '../types-advanced';
 import { TamaEntity } from './TamaEntity';
 import { SystemOrchestrator } from './SystemOrchestrator';
 import { TamaGameStateAdapter } from './TamaGameStateAdapter';
+import { AutonomousEngine } from './AutonomousEngine';
+import { migrateAllTamas, needsMigration } from '../utils/tamaDataMigration';
 
 export class TamaEngine {
   private gameState: TamaGameState;
@@ -10,10 +13,13 @@ export class TamaEngine {
   private readonly TICK_INTERVAL = 500; // 0.5 seconds for 2x speed
   private systemOrchestrator: SystemOrchestrator;
   private stateAdapter: TamaGameStateAdapter;
+  private autonomousEngine: AutonomousEngine;
+  private advancedTamas: AdvancedTamaData[] = []; // Migrated Tamas with advanced features
 
   constructor(initialState?: Partial<TamaGameState>) {
     this.systemOrchestrator = new SystemOrchestrator();
     this.stateAdapter = new TamaGameStateAdapter();
+    this.autonomousEngine = new AutonomousEngine();
 
     // Load saved state or use provided initial state
     if (!initialState) {
@@ -28,16 +34,19 @@ export class TamaEngine {
       this.systemOrchestrator.initializeCustomers(this.gameState);
     }
 
+    // Migrate Tamas to advanced format
+    this.migrateTamasToAdvanced();
+
     this.startGameLoop();
   }
 
   private createInitialState(overrides?: Partial<TamaGameState>): TamaGameState {
     const defaultState: TamaGameState = {
       resources: {
-        tamaCoins: 100,
-        berries: 10,
-        wood: 5,
-        stone: 2,
+        tamaCoins: 150, // +50% more starting coins for better early game flexibility
+        berries: 15,    // +50% more berries for feeding Tamas
+        wood: 8,        // +60% more wood to reduce early building bottleneck
+        stone: 4,       // Doubled stone for better crafting options
         happinessStars: 0,
         evolutionCrystals: 0
       },
@@ -98,6 +107,30 @@ export class TamaEngine {
     return { ...defaultState, ...overrides };
   }
 
+  /**
+   * Migrate basic Tamas to advanced format with RPG stats and autonomous behavior
+   */
+  private migrateTamasToAdvanced(): void {
+    if (this.gameState.tamas.length > 0) {
+      this.advancedTamas = migrateAllTamas(this.gameState.tamas);
+      console.log(`Migrated ${this.advancedTamas.length} Tamas to advanced format`);
+    }
+  }
+
+  /**
+   * Get advanced Tama data (with RPG stats and autonomous behavior)
+   */
+  getAdvancedTamas(): AdvancedTamaData[] {
+    return this.advancedTamas;
+  }
+
+  /**
+   * Get activity summary from autonomous engine
+   */
+  getActivitySummary(): Record<string, { activity: any; goals: number; relationships: number }> {
+    return this.autonomousEngine.getActivitySummary(this.advancedTamas);
+  }
+
   // Event system
   addEventListener(callback: GameEventCallback): void {
     this.eventCallbacks.push(callback);
@@ -135,6 +168,9 @@ export class TamaEngine {
 
     // Update Tama needs
     this.updateTamas(deltaTime);
+
+    // Update autonomous behavior for advanced Tamas
+    this.autonomousEngine.updateAutonomousBehavior(this.gameState, this.advancedTamas);
 
     // Process all game systems through orchestrator
     const systemResults = this.systemOrchestrator.processTick(this.gameState, deltaTime);
@@ -231,6 +267,11 @@ export class TamaEngine {
     this.gameState.tamas.push(tamaData);
     this.gameState.statistics.totalTamasRaised++;
 
+    // Migrate the new Tama to advanced format and add to advanced list
+    const { migrateToAdvancedTama } = require('../utils/tamaDataMigration');
+    const advancedTama = migrateToAdvancedTama(tamaData);
+    this.advancedTamas.push(advancedTama);
+
     // Update Tamadex
     this.gameState.tamadex.discovered[tamaData.species]++;
     this.gameState.tamadex.bred[tamaData.species]++;
@@ -238,6 +279,9 @@ export class TamaEngine {
       this.gameState.tamadex.maxTier[tamaData.species],
       tamaData.tier
     ) as TamaTier;
+
+    // Grant experience for creating a Tama
+    this.systemOrchestrator.handleTamaCreation(this.gameState);
 
     this.emitEvent({
       id: `tama-created-${tamaData.id}`,

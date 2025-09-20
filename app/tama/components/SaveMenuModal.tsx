@@ -181,7 +181,7 @@ export const SaveMenuModal: React.FC<SaveMenuModalProps> = ({
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
                 placeholder="Paste your Base64 save data here..."
-                className="w-full h-32 p-3 border rounded-lg resize-none text-xs font-mono"
+                className="w-full h-32 p-3 border rounded-lg resize-none text-xs font-mono bg-white text-gray-800 placeholder-gray-500"
               />
               <div className="flex gap-2">
                 <button

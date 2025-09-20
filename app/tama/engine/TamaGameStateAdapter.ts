@@ -1,5 +1,6 @@
 import { TamaGameState } from '../types';
 import { GameStateManager } from '../../../lib/gameStateManager';
+import { CompensationManager } from '../services/CompensationManager';
 
 interface GameState {
   gameId: string;
@@ -75,9 +76,10 @@ export class TamaGameStateAdapter {
 
   /**
    * Merge saved progress back into TamaGameState
+   * With graceful migration and compensation for breaking changes
    */
   private mergeGenericToTamaState(tamaState: TamaGameState, genericState: GameState): TamaGameState {
-    // If we have a full game state saved, use that
+    // If we have a full game state saved, use that (with migration)
     if (genericState.progress.fullGameState) {
       const savedState = genericState.progress.fullGameState as TamaGameState;
 
@@ -131,21 +133,179 @@ export class TamaGameStateAdapter {
   }
 
   /**
-   * Basic validation of TamaGameState structure
+   * Migration-aware validation and compensation system
+   * If save is incompatible, migrate what we can and give compensation gifts
    */
   private validateTamaGameState(state: any): state is TamaGameState {
-    return (
-      state &&
-      typeof state === 'object' &&
-      state.resources &&
-      state.tamas &&
-      Array.isArray(state.tamas) &&
-      state.buildings &&
-      Array.isArray(state.buildings) &&
-      state.progression &&
-      state.statistics &&
-      typeof state.lastUpdate === 'number'
-    );
+    try {
+      // Check basic structure first
+      if (!state || typeof state !== 'object') return false;
+
+      // Try to migrate incompatible saves gracefully
+      const migrated = this.migrateOldSave(state);
+      if (migrated) {
+        // Replace the state with migrated version
+        Object.assign(state, migrated);
+        return true;
+      }
+
+      // Standard validation for current format
+      return (
+        state.resources &&
+        state.tamas &&
+        Array.isArray(state.tamas) &&
+        state.buildings &&
+        Array.isArray(state.buildings) &&
+        state.progression &&
+        state.statistics &&
+        typeof state.lastUpdate === 'number'
+      );
+    } catch (error) {
+      console.warn('Save validation failed, will provide compensation:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Migrate old save formats and provide compensation
+   */
+  private migrateOldSave(oldState: any): TamaGameState | null {
+    try {
+      // Handle missing required fields
+      const hasBasicStructure = oldState.resources || oldState.tamas || oldState.progression;
+
+      if (!hasBasicStructure) return null;
+
+      // Create fresh state with compensation
+      const freshState = this.createCompensatedState(oldState);
+
+      // Trigger compensation modal through manager
+      CompensationManager.getInstance().showCompensation(oldState);
+      return freshState;
+
+    } catch (error) {
+      console.warn('Migration failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Create a fresh state with generous compensation for lost progress
+   */
+  private createCompensatedState(oldState: any): TamaGameState {
+    // Extract what we can from old save
+    const oldLevel = oldState.progression?.level || oldState.level || 1;
+    const oldTamaCount = oldState.tamas?.length || oldState.tamaCount || 0;
+    const oldPlayTime = oldState.statistics?.totalPlayTime || oldState.totalPlayTime || 0;
+
+    // Calculate compensation based on lost progress
+    const compensationMultiplier = Math.max(1, Math.floor(oldLevel / 2) + Math.floor(oldTamaCount / 3));
+
+    // Create generous compensation package
+    const compensatedState: TamaGameState = {
+      resources: {
+        tamaCoins: 500 * compensationMultiplier,
+        berries: 100 * compensationMultiplier,
+        wood: 50 * compensationMultiplier,
+        stone: 25 * compensationMultiplier,
+        happinessStars: 20 * compensationMultiplier,
+        evolutionCrystals: 10 * compensationMultiplier
+      },
+      tamas: [],
+      buildings: [],
+      customers: [],
+      activeContracts: [],
+      crafting: {
+        queue: [],
+        unlockedRecipes: ['basic_food', 'simple_toy', 'mega_food', 'luxury_toy'] // Extra unlocks
+      },
+      progression: {
+        level: Math.max(3, Math.floor(oldLevel * 0.7)), // Preserve most progress
+        experience: 0,
+        prestigeLevel: 0,
+        prestigePoints: Math.floor(oldLevel * 10), // Bonus prestige points
+        skillPoints: Math.max(5, Math.floor(oldLevel * 2)), // Generous skill points
+        specialization: oldState.progression?.specialization,
+        skillTree: { caretaker: {}, breeder: {}, entrepreneur: {} },
+        lifetimeStats: {
+          totalTamasOwned: oldTamaCount,
+          totalContractsCompleted: 0,
+          totalResourcesEarned: 0,
+          totalTimePlayedMinutes: Math.floor(oldPlayTime / 60000),
+          highestTamaLevel: 0,
+          prestigeCount: 0
+        }
+      },
+      unlocks: {
+        buildings: ['basic_house', 'simple_workshop'], // Head start on buildings
+        recipes: ['basic_food', 'simple_toy', 'mega_food'],
+        species: ['basic', 'forest'] // Extra species unlocked
+      },
+      achievements: [],
+      tamadex: {
+        discovered: { basic: 0, forest: 0, aquatic: 0, crystal: 0, shadow: 0, cosmic: 0 },
+        bred: { basic: 0, forest: 0, aquatic: 0, crystal: 0, shadow: 0, cosmic: 0 },
+        maxTier: { basic: 0, forest: 0, aquatic: 0, crystal: 0, shadow: 0, cosmic: 0 }
+      },
+      settings: {
+        autoSave: true,
+        notifications: true,
+        graphicsQuality: 'normal'
+      },
+      statistics: {
+        totalPlayTime: oldPlayTime,
+        totalTamasRaised: oldTamaCount,
+        totalContractsCompleted: 0,
+        totalItemsCrafted: 0,
+        prestigeCount: 0,
+        completedAdventures: []
+      },
+      inventory: {},
+      activeAdventures: [],
+      lastUpdate: Date.now()
+    };
+
+    // Add a compensation Tama - rare tier!
+    const compensationTama = this.createCompensationTama();
+    compensatedState.tamas.push(compensationTama);
+
+    return compensatedState;
+  }
+
+  /**
+   * Create a rare compensation Tama with good stats
+   */
+  private createCompensationTama(): any {
+    const species = ['forest', 'aquatic', 'crystal'][Math.floor(Math.random() * 3)];
+    const names = ['Compensation', 'Sorry', 'MakeItUp', 'Rare', 'Bonus', 'Gift'];
+
+    return {
+      id: `compensation-tama-${Date.now()}`,
+      name: names[Math.floor(Math.random() * names.length)],
+      species,
+      tier: Math.random() < 0.3 ? 2 : 1, // 30% chance of tier 2!
+      level: 5, // Start at level 5
+      experience: 0,
+      genetics: {
+        cuteness: 70 + Math.random() * 30, // High stats
+        intelligence: 70 + Math.random() * 30,
+        energy: 70 + Math.random() * 30,
+        appetite: 30 + Math.random() * 40 // Lower appetite (better)
+      },
+      needs: {
+        hunger: 80,
+        happiness: 90,
+        energy: 85,
+        cleanliness: 90
+      },
+      stats: {
+        totalInteractions: 0,
+        hoursLived: 0,
+        jobsCompleted: 0
+      },
+      createdAt: Date.now(),
+      lastInteraction: Date.now()
+    };
   }
 
   /**
@@ -296,4 +456,5 @@ export class TamaGameStateAdapter {
       return false;
     }
   }
+
 }

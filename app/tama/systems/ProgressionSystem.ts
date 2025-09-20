@@ -45,7 +45,7 @@ export class ProgressionSystem {
   }
 
   // Experience and Leveling
-  grantExperience(gameState: TamaGameState, source: keyof typeof EXPERIENCE_SOURCES, amount: number): void {
+  grantExperience(gameState: TamaGameState, source: keyof typeof EXPERIENCE_SOURCES, amount: number = 0): void {
     const experienceSource = EXPERIENCE_SOURCES[source];
     if (!experienceSource) return;
 
@@ -110,10 +110,13 @@ export class ProgressionSystem {
   }
 
   private calculateSkillPointsForLevel(level: number): number {
-    if (level <= 5) return 1;
-    if (level <= 15) return 2;
-    if (level <= 35) return 3;
-    return 5;
+    // More generous early game skill points
+    if (level <= 3) return 2;
+    if (level <= 5) return 3;
+    if (level <= 10) return 2;
+    if (level <= 20) return 3;
+    if (level <= 35) return 4;
+    return 6;
   }
 
   private processMilestoneRewards(gameState: TamaGameState, milestone: Milestone): void {
@@ -121,6 +124,20 @@ export class ProgressionSystem {
 
     if (milestone.rewards.tamaCoins) {
       gameState.resources.tamaCoins += milestone.rewards.tamaCoins;
+    }
+
+    // Grant resource rewards
+    if (milestone.rewards.berries) {
+      gameState.resources.berries += milestone.rewards.berries;
+    }
+    if (milestone.rewards.wood) {
+      gameState.resources.wood += milestone.rewards.wood;
+    }
+    if (milestone.rewards.stone) {
+      gameState.resources.stone += milestone.rewards.stone;
+    }
+    if (milestone.rewards.happinessStars) {
+      gameState.resources.happinessStars += milestone.rewards.happinessStars;
     }
 
     if (milestone.rewards.unlocks) {

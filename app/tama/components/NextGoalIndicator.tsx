@@ -197,12 +197,15 @@ export const NextGoalIndicator: React.FC<NextGoalIndicatorProps> = ({ gameState,
       {topGoal.actionText && (
         <div className="bg-blue-50 p-2 rounded border-l-4 border-blue-400">
           {topGoal.clickable && topGoal.onClick ? (
-            <button
-              onClick={topGoal.onClick}
-              className="text-xs font-medium text-blue-800 hover:text-blue-900 underline cursor-pointer transition-colors"
-            >
-              💡 {topGoal.actionText}
-            </button>
+            <p className="text-xs font-medium text-blue-800">
+              💡{' '}
+              <button
+                onClick={topGoal.onClick}
+                className="text-blue-800 hover:text-blue-900 underline cursor-pointer transition-colors"
+              >
+                {topGoal.actionText}
+              </button>
+            </p>
           ) : (
             <p className="text-xs font-medium text-blue-800">💡 {topGoal.actionText}</p>
           )}

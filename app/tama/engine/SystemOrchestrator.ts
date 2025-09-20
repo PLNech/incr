@@ -3,10 +3,12 @@ import { CraftingSystem, CompletedCraft } from '../systems/CraftingSystem';
 import { CustomerSystem, ContractResult } from '../systems/CustomerSystem';
 import { BuildingSystem } from '../systems/BuildingSystem';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
+import { AdventureSystem, AdventureResult } from '../systems/AdventureSystem';
 
 export interface SystemProcessResults {
   crafting: CompletedCraft[];
   contracts: ContractResult[];
+  adventures: AdventureResult[];
   experience: number;
   events: string[];
 }
@@ -19,12 +21,14 @@ export class SystemOrchestrator {
   private customers: CustomerSystem;
   private buildings: BuildingSystem;
   private progression: ProgressionSystem;
+  private adventures: AdventureSystem;
 
   constructor() {
     this.crafting = new CraftingSystem();
     this.customers = new CustomerSystem();
     this.buildings = new BuildingSystem();
     this.progression = new ProgressionSystem();
+    this.adventures = new AdventureSystem();
   }
 
   /**
@@ -34,6 +38,7 @@ export class SystemOrchestrator {
     const results: SystemProcessResults = {
       crafting: [],
       contracts: [],
+      adventures: [],
       experience: 0,
       events: []
     };
@@ -66,7 +71,19 @@ export class SystemOrchestrator {
       }
     });
 
-    // 4. Check for achievements and progression
+    // 4. Process completed adventures
+    const adventureResults = this.adventures.processCompletedAdventures(gameState);
+    results.adventures = adventureResults;
+
+    // Grant experience for completed adventures
+    adventureResults.forEach(result => {
+      if (result.success && result.experienceGained) {
+        this.progression.grantExperience(gameState, 'adventure_completion', result.experienceGained);
+        results.experience += result.experienceGained;
+      }
+    });
+
+    // 5. Check for achievements and progression
     this.progression.checkAchievements(gameState);
 
     return results;
@@ -84,7 +101,15 @@ export class SystemOrchestrator {
    */
   handleTamaInteraction(gameState: TamaGameState, action: string): void {
     // Grant experience for interacting with Tamas
-    this.progression.grantExperience(gameState, 'tama_interaction', 5);
+    this.progression.grantExperience(gameState, 'tama_interaction');
+
+    // Check for level-based achievements
+    this.progression.checkAchievements(gameState);
+  }
+
+  handleTamaCreation(gameState: TamaGameState): void {
+    // Grant experience for creating a Tama
+    this.progression.grantExperience(gameState, 'tama_creation');
 
     // Check for level-based achievements
     this.progression.checkAchievements(gameState);
@@ -121,7 +146,8 @@ export class SystemOrchestrator {
       crafting: this.crafting,
       customers: this.customers,
       buildings: this.buildings,
-      progression: this.progression
+      progression: this.progression,
+      adventures: this.adventures
     };
   }
 

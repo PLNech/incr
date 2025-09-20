@@ -2,6 +2,28 @@ import { Achievement, Milestone, SkillNode } from '../types';
 
 export const ACHIEVEMENTS: Achievement[] = [
   {
+    id: 'first_steps',
+    name: 'First Steps',
+    description: 'Interact with a Tama 5 times',
+    category: 'care',
+    unlocked: false,
+    rewards: {
+      tamaCoins: 25,
+      skillPoints: 1
+    }
+  },
+  {
+    id: 'first_level_5',
+    name: 'Growing Together',
+    description: 'Raise a Tama to level 5',
+    category: 'care',
+    unlocked: false,
+    rewards: {
+      tamaCoins: 50,
+      skillPoints: 1
+    }
+  },
+  {
     id: 'first_level_10',
     name: 'Growing Up',
     description: 'Raise a Tama to level 10',
@@ -9,6 +31,28 @@ export const ACHIEVEMENTS: Achievement[] = [
     unlocked: false,
     rewards: {
       tamaCoins: 100,
+      skillPoints: 1
+    }
+  },
+  {
+    id: 'multiple_tamas',
+    name: 'Growing Family',
+    description: 'Own 3 Tamas at once',
+    category: 'collection',
+    unlocked: false,
+    rewards: {
+      tamaCoins: 150,
+      skillPoints: 1
+    }
+  },
+  {
+    id: 'first_contract',
+    name: 'Business Venture',
+    description: 'Complete your first contract',
+    category: 'business',
+    unlocked: false,
+    rewards: {
+      tamaCoins: 75,
       skillPoints: 1
     }
   },
@@ -63,39 +107,45 @@ export const MILESTONES: Milestone[] = [
   {
     level: 2,
     name: 'First Steps',
-    description: 'Your ranch is growing!',
+    description: 'Your ranch is growing! Buildings unlocked!',
     rewards: {
-      skillPoints: 1,
-      tamaCoins: 50,
+      skillPoints: 2,
+      tamaCoins: 100,
+      berries: 25,
       unlocks: ['crafting_workshop']
     }
   },
   {
     level: 3,
     name: 'Getting Serious',
-    description: 'You\'re learning the ropes',
+    description: 'Crafting recipes discovered!',
     rewards: {
-      skillPoints: 1,
-      tamaCoins: 100,
-      unlocks: ['auto_feeder']
+      skillPoints: 2,
+      tamaCoins: 150,
+      wood: 10,
+      stone: 5,
+      unlocks: ['auto_feeder', 'advanced_treats']
     }
   },
   {
     level: 4,
     name: 'Ranch Manager',
-    description: 'Time to expand operations',
+    description: 'Adventures unlocked! Explore the world!',
     rewards: {
-      skillPoints: 2,
-      tamaCoins: 200,
-      unlocks: ['luxury_habitat']
+      skillPoints: 3,
+      tamaCoins: 300,
+      happinessStars: 10,
+      unlocks: ['luxury_habitat', 'adventures']
     }
   },
   {
     level: 5,
     name: 'Specialization Choice',
-    description: 'Choose your specialization path',
+    description: 'Choose your specialization path and gain mastery!',
     rewards: {
-      skillPoints: 3
+      skillPoints: 5,
+      tamaCoins: 500,
+      unlocks: ['specializations']
     }
   },
   {
@@ -295,13 +345,18 @@ export const SKILL_TREES = {
 };
 
 export const EXPERIENCE_SOURCES = {
-  tama_interaction: { base: 5, description: 'Interacting with Tamas' },
+  tama_interaction: { base: 6, description: 'Interacting with Tamas' },
+  first_interaction: { base: 12, description: 'First interaction with a new Tama' },
+  tama_creation: { base: 10, description: 'Creating a new Tama' },
   contract_completion: { base: 25, description: 'Completing contracts' },
   tama_level_up: { base: 50, description: 'Tama reaches new level' },
   tama_tier_up: { base: 200, description: 'Tama reaches new tier' },
   building_built: { base: 15, description: 'Constructing buildings' },
   recipe_discovery: { base: 30, description: 'Discovering new recipes' },
-  achievement_unlock: { base: 100, description: 'Unlocking achievements' }
+  achievement_unlock: { base: 100, description: 'Unlocking achievements' },
+  adventure_completion: { base: 20, description: 'Completing adventures' },
+  daily_login: { base: 8, description: 'Daily login bonus' },
+  tutorial_step: { base: 5, description: 'Completing tutorial steps' }
 };
 
 export const PRESTIGE_REQUIREMENTS = {
@@ -310,6 +365,6 @@ export const PRESTIGE_REQUIREMENTS = {
   minTier3Count: 2
 };
 
-export const EXPERIENCE_CURVE_BASE = 25; // Reduced from 100 for faster early game
-export const EXPERIENCE_CURVE_MULTIPLIER = 1.3; // Reduced from 1.5 for gentler curve
+export const EXPERIENCE_CURVE_BASE = 20; // Further reduced for faster early levels
+export const EXPERIENCE_CURVE_MULTIPLIER = 1.25; // Even gentler curve for better progression feel
 export const PRESTIGE_POINT_MULTIPLIER = 0.1;
