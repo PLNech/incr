@@ -116,11 +116,13 @@ export class BergGameEngine {
       const entranceArea = this.floorLayout.getArea(AreaID.ENTRANCE);
       if (entranceArea) {
         this.queueSystem = new QueueFormationSystem(
+          this.transactionSystem,
+          this.socialSystem,
           entranceArea.bounds.x + entranceArea.bounds.width / 2,
           entranceArea.bounds.y + entranceArea.bounds.height + 2
         );
       } else {
-        this.queueSystem = new QueueFormationSystem(20, 30); // Default position
+        this.queueSystem = new QueueFormationSystem(this.transactionSystem, this.socialSystem, 20, 30); // Default position
       }
       
       this.log('✅ All game systems initialized successfully');

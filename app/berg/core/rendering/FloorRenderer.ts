@@ -334,7 +334,7 @@ export class FloorRenderer {
     const now = performance.now();
     const completed: AreaID[] = [];
     
-    for (const [areaId, anim] of this.revealAnimations.entries()) {
+    for (const [areaId, anim] of Array.from(this.revealAnimations.entries())) {
       if (now >= anim.startTime + anim.duration) {
         completed.push(areaId);
       }

@@ -3,16 +3,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { GameStateManager } from '../../lib/gameStateManager';
 import Link from 'next/link';
-import { 
-  BergGameState, 
-  Quote, 
-  Clubber, 
+import {
+  BergGameState,
+  Quote,
+  Clubber,
+  QueuedPerson,
   JourneyStep,
-  TIER_NAMES, 
-  TIER_YEARS, 
-  VISUAL_THEMES, 
+  TIER_NAMES,
+  TIER_YEARS,
+  VISUAL_THEMES,
   CROWD_COLORS,
-  TIER_THRESHOLDS 
+  TIER_THRESHOLDS
 } from './types';
 import { BERG_QUOTES, getRandomQuoteForTier } from './quotes';
 import { BergAudioManager } from './audio';
@@ -1142,30 +1143,17 @@ export default function BergIncPage() {
       
       console.log(`🎯 Initial queue size: ${bouncerSystemRef.current.getQueueSize()}`);
       
-      const initialQueue: Clubber[] = [];
-      
+      const initialQueue: QueuedPerson[] = [];
+
       initialGroups.forEach(group => {
         for (let i = 0; i < group.size; i++) {
           initialQueue.push({
             id: `initial-${Date.now()}-${Math.random()}`,
-            x: 0,
-            y: 0,
-            targetX: 0,
-            targetY: 0,
+            type: group.type as Clubber['type'],
             color: CROWD_COLORS[0][0],
-            type: group.type as any,
-            currentSpace: 'queue',
-            journey: ['queue', 'entrance', 'dancefloor', 'bar', 'toilets', 'exit'] as JourneyStep[],
-            journeyStep: 0,
-            spentMoney: 0,
-            entryFee: 10,
-            timeInClub: 0,
-            stamina: 100,
-            tiredness: 0,
-            speed: 1,
-            pauseTime: 2000,
-            lastMoved: Date.now(),
-            movementPattern: 'organic' as const
+            arrivalTime: Date.now(),
+            willingness: Math.floor(Math.random() * 100),
+            rejectionThreshold: Math.floor(Math.random() * 50) + 30
           });
         }
       });

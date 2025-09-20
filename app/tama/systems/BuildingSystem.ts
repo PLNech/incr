@@ -371,7 +371,7 @@ export class BuildingSystem {
   }
 
   getBuildingStats(gameState: TamaGameState): BuildingStats {
-    const buildingTypes = [...new Set(gameState.buildings.map(b => b.type))];
+    const buildingTypes = Array.from(new Set(gameState.buildings.map(b => b.type)));
 
     return {
       totalBuildings: gameState.buildings.length,

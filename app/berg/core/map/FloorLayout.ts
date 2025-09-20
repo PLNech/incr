@@ -93,7 +93,7 @@ export class FloorLayout {
   
   private applyInitialAreasToGrids(): void {
     // Apply all areas marked as initially unlocked to their respective grids
-    for (const [floor, floorPlan] of this.floors.entries()) {
+    for (const [floor, floorPlan] of Array.from(this.floors.entries())) {
       for (const area of floorPlan.areas) {
         if (area.isUnlocked) {
           this.applyAreaToGrid(floorPlan.gridMap, area);
@@ -364,7 +364,7 @@ export class FloorLayout {
     if (this.unlockedAreas.has(areaId)) return false;
     
     // Find the area across all floors
-    for (const [floor, floorPlan] of this.floors.entries()) {
+    for (const [floor, floorPlan] of Array.from(this.floors.entries())) {
       const area = floorPlan.areas.find(a => a.id === areaId);
       if (area) {
         area.isUnlocked = true;
@@ -410,7 +410,7 @@ export class FloorLayout {
   }
   
   public getArea(areaId: AreaID): Area | null {
-    for (const floorPlan of this.floors.values()) {
+    for (const floorPlan of Array.from(this.floors.values())) {
       const area = floorPlan.areas.find(a => a.id === areaId);
       if (area) return area;
     }
@@ -424,7 +424,7 @@ export class FloorLayout {
   public getAreasForTier(tier: number): AreaID[] {
     const areas: AreaID[] = [];
     
-    for (const floorPlan of this.floors.values()) {
+    for (const floorPlan of Array.from(this.floors.values())) {
       for (const area of floorPlan.areas) {
         if (area.unlockTier <= tier && !this.unlockedAreas.has(area.id)) {
           areas.push(area.id);
@@ -465,7 +465,7 @@ export class FloorLayout {
   public getTotalCapacity(): number {
     let capacity = 0;
     
-    for (const floorPlan of this.floors.values()) {
+    for (const floorPlan of Array.from(this.floors.values())) {
       for (const area of floorPlan.areas) {
         if (area.isUnlocked) {
           capacity += area.capacity;

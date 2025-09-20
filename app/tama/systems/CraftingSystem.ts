@@ -138,7 +138,7 @@ export class CraftingSystem {
 
     // Skill tree bonuses (when implemented)
     const crafterSkills = gameState.progression.skillTree?.crafter;
-    if (crafterSkills?.speedBoost) {
+    if (crafterSkills?.speedBoost && typeof crafterSkills.speedBoost === 'number') {
       multiplier *= (1 - crafterSkills.speedBoost * 0.1); // 10% faster per level
     }
 

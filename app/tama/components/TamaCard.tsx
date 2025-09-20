@@ -5,7 +5,7 @@ import { TamaData } from '../types';
 
 interface TamaCardProps {
   tama: TamaData;
-  onInteract: (tamaId: string, action: 'feed' | 'play' | 'clean') => void;
+  onInteract: (tamaId: string, action: 'feed' | 'play' | 'clean' | 'rest') => void;
 }
 
 const getSpeciesEmoji = (species: string): string => {

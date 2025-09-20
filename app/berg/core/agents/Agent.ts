@@ -528,7 +528,7 @@ ${this.isGuestList ? '👑 Guest List' : '🎫 Regular Entry'}`;
     let typeFactor = 1;
     if (this.type === 'authentic') {
       typeFactor = 1 + (tier * 0.1); // Authentic people take longer pauses to resist the pace
-    } else if (this.type === 'performative' || this.type === 'influencer') {
+    } else if (this.type === 'influencer') {
       typeFactor = Math.max(0.2, 1 - (tier * 0.2)); // Very short pauses for performative types
     }
     

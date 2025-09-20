@@ -146,13 +146,13 @@ export const SkillsModal: React.FC<SkillsModalProps> = ({
 
   const renderSkillTree = (treeKey: keyof SkillTree) => {
     const tree = skillTree[treeKey];
-    const colors = getSkillColorClasses(treeKey);
+    const colors = getSkillColorClasses(treeKey as string);
     const skills = Object.values(tree) as SkillNodeDisplay[];
 
     return (
       <div className="space-y-3">
         {skills.map((skill) => {
-          const canLearn = canLearnSkill(skill, treeKey);
+          const canLearn = canLearnSkill(skill, treeKey as string);
           const cost = skill.cost + skill.level;
           const isMaxLevel = skill.level >= skill.maxLevel;
 
@@ -214,7 +214,7 @@ export const SkillsModal: React.FC<SkillsModalProps> = ({
                   </div>
                   {!isMaxLevel && (
                     <button
-                      onClick={() => handleLearnSkill(treeKey, skill.id)}
+                      onClick={() => handleLearnSkill(treeKey as string, skill.id)}
                       disabled={!canLearn}
                       className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
                         canLearn

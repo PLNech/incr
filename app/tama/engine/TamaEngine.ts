@@ -1,4 +1,4 @@
-import { TamaGameState, GameEvent, GameEventCallback, TamaData } from '../types';
+import { TamaGameState, GameEvent, GameEventCallback, TamaData, TamaTier } from '../types';
 import { TamaEntity } from './TamaEntity';
 import { SystemOrchestrator } from './SystemOrchestrator';
 import { TamaGameStateAdapter } from './TamaGameStateAdapter';
@@ -237,7 +237,7 @@ export class TamaEngine {
     this.gameState.tamadex.maxTier[tamaData.species] = Math.max(
       this.gameState.tamadex.maxTier[tamaData.species],
       tamaData.tier
-    );
+    ) as TamaTier;
 
     this.emitEvent({
       id: `tama-created-${tamaData.id}`,

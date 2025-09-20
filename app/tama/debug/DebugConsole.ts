@@ -24,8 +24,8 @@ export class DebugConsole {
   addXP(amount: number = 1000) {
     const engine = this.requireEngine();
     const gameState = engine.getGameState();
-    gameState.progression.experience += amount;
-    engine.getSystems().progression.checkLevelUp(gameState, gameState.progression.level);
+    // Use the public grantExperience method which handles level up checks automatically
+    engine.getSystems().progression.grantExperience(gameState, 'tama_interaction', amount);
     console.log(`Added ${amount} XP. Current: ${gameState.progression.experience} (Level ${gameState.progression.level})`);
   }
 
@@ -59,7 +59,7 @@ export class DebugConsole {
     gameState.resources.berries += 500 * multiplier;
     gameState.resources.wood += 200 * multiplier;
     gameState.resources.stone += 100 * multiplier;
-    gameState.resources.crystals += 50 * multiplier;
+    gameState.resources.evolutionCrystals += 50 * multiplier;
     console.log(`Added resources (x${multiplier}):`, gameState.resources);
   }
 
@@ -162,10 +162,15 @@ export class DebugConsole {
   }
 
   resetGame() {
-    const engine = this.requireEngine();
-    if (confirm('⚠️  This will reset ALL game progress. Are you sure?')) {
-      engine.resetGame();
-      console.log('🔄 Game reset complete');
+    if (confirm('⚠️ This will reset ALL game progress. Are you sure?')) {
+      const engine = this.requireEngine();
+      // Reset to initial state by creating a fresh engine instance
+      // This will clear all progress and start fresh
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('incr_games_tama');
+        window.location.reload();
+      }
+      console.log('🔄 Game reset complete - page reloading');
     }
   }
 

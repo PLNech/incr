@@ -5,6 +5,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'first_level_10',
     name: 'Growing Up',
     description: 'Raise a Tama to level 10',
+    category: 'care',
     unlocked: false,
     rewards: {
       tamaCoins: 100,
@@ -15,6 +16,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'tama_collector',
     name: 'Tama Collector',
     description: 'Own 10 Tamas at once',
+    category: 'collection',
     unlocked: false,
     rewards: {
       tamaCoins: 500,
@@ -26,6 +28,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'contract_master',
     name: 'Contract Master',
     description: 'Complete 100 contracts',
+    category: 'business',
     unlocked: false,
     rewards: {
       tamaCoins: 1000,
@@ -36,6 +39,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'first_prestige',
     name: 'New Beginnings',
     description: 'Perform your first prestige',
+    category: 'prestige',
     unlocked: false,
     rewards: {
       skillPoints: 5,
@@ -46,6 +50,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'tier_3_master',
     name: 'Tier 3 Master',
     description: 'Achieve tier 3 with any Tama',
+    category: 'breeding',
     unlocked: false,
     rewards: {
       tamaCoins: 2000,

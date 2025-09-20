@@ -241,22 +241,6 @@ export interface Contract {
   endTime?: number;
 }
 
-// Buildings
-export interface Building {
-  id: string;
-  type: 'habitat' | 'workshop' | 'farm' | 'automation';
-  name: string;
-  level: number;
-  capacity: number;
-  effects: {
-    happinessBonus?: number;
-    productionMultiplier?: number;
-    automationLevel?: number; // 0-3 (none, basic, advanced, full)
-  };
-  assignedTamas: string[]; // Tama IDs working here
-  position?: { x: number; y: number };
-}
-
 // Progression
 export interface PlayerProgression {
   level: number;
