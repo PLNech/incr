@@ -250,7 +250,7 @@ export class TamaEngine {
     return tamaData;
   }
 
-  interactWithTama(tamaId: string, action: 'feed' | 'play' | 'clean' | 'rest', item?: string): boolean {
+  interactWithTama(tamaId: string, action: 'feed' | 'play' | 'clean' | 'wakeUp', item?: string): boolean {
     const tamaIndex = this.gameState.tamas.findIndex(t => t.id === tamaId);
     if (tamaIndex === -1) return false;
 
@@ -268,8 +268,8 @@ export class TamaEngine {
       case 'clean':
         result = tama.clean();
         break;
-      case 'rest':
-        result = tama.rest(item || 'basic_bed');
+      case 'wakeUp':
+        result = tama.wakeUp();
         break;
     }
 

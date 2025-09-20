@@ -9,6 +9,9 @@ import { WelcomeTutorial } from './components/WelcomeTutorial';
 import { NextGoalIndicator } from './components/NextGoalIndicator';
 import { Tooltip } from './components/Tooltip';
 import { SkillsModal } from './components/SkillsModal';
+import { BuildingsModal } from './components/BuildingsModal';
+import { CraftingModal } from './components/CraftingModal';
+import { ContractsModal } from './components/ContractsModal';
 import debugConsole from './debug/DebugConsole';
 
 interface Notification {
@@ -24,6 +27,9 @@ function TamaGameContent() {
   const [lastLevel, setLastLevel] = useState<number>(1);
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
   const [showSkillsModal, setShowSkillsModal] = useState<boolean>(false);
+  const [showBuildingsModal, setShowBuildingsModal] = useState<boolean>(false);
+  const [showCraftingModal, setShowCraftingModal] = useState<boolean>(false);
+  const [showContractsModal, setShowContractsModal] = useState<boolean>(false);
 
   const addNotification = (message: string, type: 'xp' | 'levelup' | 'achievement' | 'info' = 'info', duration = 3000) => {
     const notification: Notification = {
@@ -39,11 +45,18 @@ function TamaGameContent() {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  const handleTamaInteract = (tamaId: string, action: 'feed' | 'play' | 'clean' | 'rest') => {
+  const handleTamaInteract = (tamaId: string, action: 'feed' | 'play' | 'clean' | 'wakeUp') => {
     if (engine && isLoaded) {
       engine.interactWithTama(tamaId, action);
-      // Show XP gain notification
-      addNotification('+5 XP', 'xp', 2000);
+      // Show contextual XP gain notification
+      const actionEmojis = {
+        feed: '🍎',
+        play: '🎾',
+        clean: '🧽',
+        wakeUp: '👁️'
+      };
+      const xpGain = action === 'wakeUp' ? 1 : 5; // Wake up gives less XP
+      addNotification(`${actionEmojis[action]} +${xpGain} XP`, 'xp', 2000);
     }
   };
 
@@ -51,8 +64,15 @@ function TamaGameContent() {
     if (engine && isLoaded) {
       const name = prompt('What would you like to name your new Tama?') || 'Buddy';
       engine.createTama(name);
-      // Show XP gain notification for creating Tama
-      addNotification('+10 XP', 'xp', 2000);
+      // Show celebration notification for creating Tama
+      addNotification(`🐣 ${name} hatched! +10 XP`, 'xp', 3000);
+
+      // Show helpful tip for new users
+      if (gameState.tamas.length === 0) {
+        setTimeout(() => {
+          addNotification('💡 Watch your Tama\'s needs and interact when they\'re low!', 'info', 5000);
+        }, 2000);
+      }
     }
   };
 
@@ -152,27 +172,94 @@ function TamaGameContent() {
         {/* Tama Collection */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">Your Tamas</h2>
+            <div className="flex items-center gap-4">
+              <h2 className="text-2xl font-bold text-gray-800">Your Tamas</h2>
+              {gameState.tamas.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const urgentNeeds = gameState.tamas.reduce((count, tama) => {
+                      return count + Object.values(tama.needs).filter(need => need <= 30).length;
+                    }, 0);
+
+                    if (urgentNeeds > 0) {
+                      return (
+                        <div className="flex items-center gap-1 bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm animate-pulse">
+                          <span>⚠️</span>
+                          <span className="font-medium">{urgentNeeds} urgent need{urgentNeeds > 1 ? 's' : ''}</span>
+                        </div>
+                      );
+                    } else {
+                      const lowNeeds = gameState.tamas.reduce((count, tama) => {
+                        return count + Object.values(tama.needs).filter(need => need <= 60).length;
+                      }, 0);
+
+                      if (lowNeeds > 0) {
+                        return (
+                          <div className="flex items-center gap-1 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
+                            <span>⚡</span>
+                            <span className="font-medium">{lowNeeds} low need{lowNeeds > 1 ? 's' : ''}</span>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                            <span>✨</span>
+                            <span className="font-medium">All needs good!</span>
+                          </div>
+                        );
+                      }
+                    }
+                  })()}
+                </div>
+              )}
+            </div>
             <button
               onClick={handleCreateTama}
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
+              title="Create a new Tama (+10 XP)"
             >
-              + New Tama
+              <span className="text-lg">🐣</span>
+              <span>+ New Tama</span>
+              <span className="text-xs bg-green-400 px-2 py-0.5 rounded-full">+10 XP</span>
             </button>
           </div>
 
           {gameState.tamas.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <div className="text-6xl mb-4">🐾</div>
-              <h3 className="text-xl font-medium text-gray-800 mb-2">No Tamas yet!</h3>
-              <p className="text-gray-600 mb-4">
-                Create your first Tama to start your ranch adventure.
-              </p>
+            <div className="text-center py-12 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg border-2 border-dashed border-green-300">
+              <div className="text-6xl mb-4 animate-bounce">🐣</div>
+              <h3 className="text-xl font-medium text-gray-800 mb-2">Ready to start your Tama ranch!</h3>
+              <div className="max-w-md mx-auto mb-6">
+                <div className="bg-white rounded-lg p-4 border border-green-200 mb-4">
+                  <h4 className="font-semibold text-green-800 mb-2">💡 Tama Basics</h4>
+                  <div className="text-sm text-gray-700 space-y-1 text-left">
+                    <div className="flex items-center gap-2">
+                      <span className="text-red-500">🍽️</span>
+                      <span>Feed when hunger is low (red/yellow)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-blue-500">🎾</span>
+                      <span>Play when happiness drops</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-purple-500">🧽</span>
+                      <span>Clean when cleanliness is poor</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-indigo-500">👁️</span>
+                      <span>Wake up sleeping Tamas (they sleep automatically)</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
+                      <span className="text-yellow-500">⭐</span>
+                      <span className="font-medium">Each action gives you XP!</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <button
                 onClick={handleCreateTama}
-                className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg"
               >
-                Create Your First Tama
+                🐾 Create Your First Tama
               </button>
             </div>
           ) : (
@@ -191,7 +278,10 @@ function TamaGameContent() {
         {/* Side Panel */}
         <div className="space-y-4">
           {/* Next Goal Indicator */}
-          <NextGoalIndicator gameState={gameState} />
+          <NextGoalIndicator
+            gameState={gameState}
+            onSkillsClick={() => setShowSkillsModal(true)}
+          />
 
           {/* Player Progress */}
           <div className="bg-white rounded-lg p-4 border border-gray-200">
@@ -291,22 +381,38 @@ function TamaGameContent() {
                 🌟 Skills ({gameState.progression.skillPoints} pts)
               </button>
               <button
-                className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-3 rounded text-sm transition-colors"
-                onClick={() => alert('🏠 Build Structures\n\nRequires: Level 2\nUnlock: Habitats & Workshops\n\nBuild Basic Habitat (50 🪙, 3 🪵) to house more Tamas, or Crafting Workshop for automation!')}
+                className={`w-full py-2 px-3 rounded text-sm transition-colors ${
+                  gameState.progression.level >= 2
+                    ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                }`}
+                onClick={() => gameState.progression.level >= 2 ? setShowBuildingsModal(true) : null}
+                disabled={gameState.progression.level < 2}
               >
-                🏠 Build
+                🏠 Build {gameState.progression.level < 2 ? '(Lv.2 req)' : ''}
               </button>
               <button
-                className="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-3 rounded text-sm transition-colors"
-                onClick={() => alert('🔨 Craft Items\n\nRequires: Level 3 + Crafting Workshop\nCost: 100 🪙, 5 🪵, 2 🪨\n\nUnlock basic recipes like Berry Snacks and Premium Food to keep your Tamas well-fed!')}
+                className={`w-full py-2 px-3 rounded text-sm transition-colors ${
+                  gameState.progression.level >= 3
+                    ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                }`}
+                onClick={() => gameState.progression.level >= 3 ? setShowCraftingModal(true) : null}
+                disabled={gameState.progression.level < 3}
               >
-                🔨 Craft Items
+                🔨 Craft Items {gameState.progression.level < 3 ? '(Lv.3 req)' : ''}
               </button>
               <button
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-3 rounded text-sm transition-colors"
-                onClick={() => alert('📋 View Contracts\n\nRequires: Level 5 + 3 Tamas\nUnlock: Customer relationships\n\nEarn bonus 🪙 by completing jobs for various customers. Each customer has different preferences and payment rates!')}
+                className={`w-full py-2 px-3 rounded text-sm transition-colors ${
+                  gameState.progression.level >= 5 && gameState.tamas.length >= 3
+                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                }`}
+                onClick={() => gameState.progression.level >= 5 && gameState.tamas.length >= 3 ? setShowContractsModal(true) : null}
+                disabled={gameState.progression.level < 5 || gameState.tamas.length < 3}
               >
-                📋 View Contracts
+                📋 View Contracts {(gameState.progression.level < 5 || gameState.tamas.length < 3) ?
+                  `(${gameState.progression.level < 5 ? `Lv.${gameState.progression.level}/5` : `${gameState.tamas.length}/3 Tamas`})` : ''}
               </button>
               <button
                 className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-3 rounded text-sm transition-colors"
@@ -335,6 +441,33 @@ function TamaGameContent() {
       <SkillsModal
         isVisible={showSkillsModal}
         onClose={() => setShowSkillsModal(false)}
+        gameState={gameState}
+        engine={engine}
+        onNotification={addNotification}
+      />
+
+      {/* Buildings System */}
+      <BuildingsModal
+        isVisible={showBuildingsModal}
+        onClose={() => setShowBuildingsModal(false)}
+        gameState={gameState}
+        engine={engine}
+        onNotification={addNotification}
+      />
+
+      {/* Crafting System */}
+      <CraftingModal
+        isVisible={showCraftingModal}
+        onClose={() => setShowCraftingModal(false)}
+        gameState={gameState}
+        engine={engine}
+        onNotification={addNotification}
+      />
+
+      {/* Contracts System */}
+      <ContractsModal
+        isVisible={showContractsModal}
+        onClose={() => setShowContractsModal(false)}
         gameState={gameState}
         engine={engine}
         onNotification={addNotification}

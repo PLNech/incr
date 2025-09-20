@@ -12,6 +12,12 @@ export class TamaEntity {
   public stats: TamaStats;
   public createdAt: number;
   public lastInteraction: number;
+  public sleepState: {
+    isAsleep: boolean;
+    sleepStartTime: number;
+    energyRecoveryRate: number;
+    canAutoWakeup: boolean;
+  };
 
   constructor(data: TamaData) {
     this.id = data.id;
@@ -25,6 +31,14 @@ export class TamaEntity {
     this.stats = { ...data.stats };
     this.createdAt = data.createdAt;
     this.lastInteraction = data.lastInteraction;
+
+    // Initialize sleep state
+    this.sleepState = data.sleepState || {
+      isAsleep: false,
+      sleepStartTime: 0,
+      energyRecoveryRate: 2, // 2 energy per minute (base rate)
+      canAutoWakeup: false  // starts false, unlocked through progression
+    };
   }
 
   static createRandom(name: string): TamaEntity {
@@ -64,7 +78,13 @@ export class TamaEntity {
         jobsCompleted: 0
       },
       createdAt: Date.now(),
-      lastInteraction: Date.now()
+      lastInteraction: Date.now(),
+      sleepState: {
+        isAsleep: false,
+        sleepStartTime: 0,
+        energyRecoveryRate: 2, // 2 energy per minute (base rate)
+        canAutoWakeup: false  // unlocked through progression
+      }
     };
 
     return new TamaEntity(data);
@@ -103,9 +123,20 @@ export class TamaEntity {
     // Update hours lived
     this.stats.hoursLived += hoursElapsed;
 
-    // Calculate decay rates (per hour) - increased for demo
+    // Check if Tama should fall asleep automatically
+    this.checkAutoSleep();
+
+    // Process sleep recovery if asleep
+    this.processSleepRecovery();
+
+    // Calculate decay rates (per hour) - modified when sleeping
     const hungerDecayRate = 50 + (this.genetics.appetite / 5); // 60-70 per hour
-    const energyDecayRate = 40 + (100 - this.genetics.energy) / 5; // 40-60 per hour
+    let energyDecayRate = 40 + (100 - this.genetics.energy) / 5; // 40-60 per hour
+
+    // Slower decay when sleeping (except energy which recovers)
+    if (this.sleepState.isAsleep) {
+      energyDecayRate = 0; // No energy decay while sleeping - it's recovering instead
+    }
     const cleanlinessDecayRate = 30; // 30 per hour
 
     // Apply decay
@@ -192,28 +223,71 @@ export class TamaEntity {
     };
   }
 
-  rest(bedType?: string): InteractionResult {
-    const bedEffects: Record<string, { energy: number; happiness: number; experience: number }> = {
-      'basic_bed': { energy: 35, happiness: 5, experience: 1 },
-      'cozy_bed': { energy: 50, happiness: 10, experience: 2 },
-      'luxury_bed': { energy: 70, happiness: 15, experience: 3 }
-    };
+  // Passive sleep system - Tamas fall asleep automatically when tired
+  private checkAutoSleep(): void {
+    // Fall asleep if energy is very low and not already asleep
+    if (!this.sleepState.isAsleep && this.needs.energy <= 20) {
+      this.sleepState.isAsleep = true;
+      this.sleepState.sleepStartTime = Date.now();
+    }
+  }
 
-    const bed = bedEffects[bedType || 'basic_bed'] || bedEffects['basic_bed'];
+  private processSleepRecovery(): void {
+    if (!this.sleepState.isAsleep) return;
 
-    this.needs.energy = Math.min(100, this.needs.energy + bed.energy);
-    this.needs.happiness = Math.min(100, this.needs.happiness + bed.happiness);
+    const now = Date.now();
+    const sleepDurationMinutes = (now - this.sleepState.sleepStartTime) / (1000 * 60);
 
-    this.gainExperience(bed.experience);
+    // Calculate energy recovery
+    const energyRecovered = sleepDurationMinutes * this.sleepState.energyRecoveryRate;
+    this.needs.energy = Math.min(100, this.needs.energy + energyRecovered);
+
+    // Auto wake up conditions
+    if (this.sleepState.canAutoWakeup) {
+      // Auto wake up when fully rested (if skill unlocked)
+      if (this.needs.energy >= 95) {
+        this.sleepState.isAsleep = false;
+      }
+    } else {
+      // Manual wake up only in early game - energy recovers slower
+      // Player needs to manually wake them up or use skills/items to enable auto-wakeup
+    }
+  }
+
+  // Manual wake up method (replaces rest button)
+  wakeUp(): InteractionResult {
+    if (!this.sleepState.isAsleep) {
+      return {
+        success: false,
+        message: `${this.name} is already awake! 👁️`,
+        experienceGained: 0,
+        needsChanged: {}
+      };
+    }
+
+    // Process any remaining sleep recovery
+    this.processSleepRecovery();
+
+    this.sleepState.isAsleep = false;
     this.stats.totalInteractions++;
     this.lastInteraction = Date.now();
 
     return {
       success: true,
-      message: `${this.name} had a refreshing rest! 😴`,
-      experienceGained: bed.experience,
-      needsChanged: { energy: bed.energy, happiness: bed.happiness }
+      message: `${this.name} wakes up refreshed! 😊`,
+      experienceGained: 1,
+      needsChanged: {}
     };
+  }
+
+  // Method to upgrade sleep abilities through skills/items
+  public upgradeSleep(recoveryRate?: number, autoWakeup?: boolean): void {
+    if (recoveryRate) {
+      this.sleepState.energyRecoveryRate = recoveryRate;
+    }
+    if (autoWakeup !== undefined) {
+      this.sleepState.canAutoWakeup = autoWakeup;
+    }
   }
 
   gainExperience(amount: number): void {
@@ -270,7 +344,8 @@ export class TamaEntity {
       needs: { ...this.needs },
       stats: { ...this.stats },
       createdAt: this.createdAt,
-      lastInteraction: this.lastInteraction
+      lastInteraction: this.lastInteraction,
+      sleepState: { ...this.sleepState }
     };
   }
 }

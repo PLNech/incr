@@ -5,6 +5,7 @@ import { TamaGameState } from '../types';
 
 interface NextGoalIndicatorProps {
   gameState: TamaGameState;
+  onSkillsClick?: () => void;
 }
 
 interface Goal {
@@ -14,9 +15,11 @@ interface Goal {
   priority: number;
   completed: boolean;
   actionText?: string;
+  clickable?: boolean;
+  onClick?: () => void;
 }
 
-export const NextGoalIndicator: React.FC<NextGoalIndicatorProps> = ({ gameState }) => {
+export const NextGoalIndicator: React.FC<NextGoalIndicatorProps> = ({ gameState, onSkillsClick }) => {
   const getNextGoals = (): Goal[] => {
     const goals: Goal[] = [];
 
@@ -55,7 +58,9 @@ export const NextGoalIndicator: React.FC<NextGoalIndicatorProps> = ({ gameState 
         icon: '🌟',
         priority: 3,
         completed: false,
-        actionText: 'Click Skills Button'
+        actionText: 'Spend your skill points',
+        clickable: true,
+        onClick: onSkillsClick
       });
     }
 
@@ -104,7 +109,9 @@ export const NextGoalIndicator: React.FC<NextGoalIndicatorProps> = ({ gameState 
         icon: '🎓',
         priority: 2,
         completed: false,
-        actionText: 'Click Skills Button'
+        actionText: 'Choose your specialization',
+        clickable: true,
+        onClick: onSkillsClick
       });
     }
 
@@ -189,7 +196,16 @@ export const NextGoalIndicator: React.FC<NextGoalIndicatorProps> = ({ gameState 
 
       {topGoal.actionText && (
         <div className="bg-blue-50 p-2 rounded border-l-4 border-blue-400">
-          <p className="text-xs font-medium text-blue-800">💡 {topGoal.actionText}</p>
+          {topGoal.clickable && topGoal.onClick ? (
+            <button
+              onClick={topGoal.onClick}
+              className="text-xs font-medium text-blue-800 hover:text-blue-900 underline cursor-pointer transition-colors"
+            >
+              💡 {topGoal.actionText}
+            </button>
+          ) : (
+            <p className="text-xs font-medium text-blue-800">💡 {topGoal.actionText}</p>
+          )}
         </div>
       )}
 

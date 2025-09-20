@@ -1,6 +1,9 @@
 // Test setup and utilities for Tama Bokujō
 // This file contains test utilities and is not a test suite itself
-export const mockTamaEntity = {
+import { TamaEntity } from '../engine/TamaEntity';
+import { TamaData } from '../types';
+
+export const mockTamaData = {
   id: 'test-tama-1',
   name: 'TestTama',
   species: 'basic',
@@ -25,7 +28,23 @@ export const mockTamaEntity = {
     jobsCompleted: 0
   },
   createdAt: Date.now(),
-  lastInteraction: Date.now()
+  lastInteraction: Date.now(),
+  sleepState: {
+    isAsleep: false,
+    sleepStartTime: 0,
+    energyRecoveryRate: 2,
+    canAutoWakeup: false
+  }
+} as TamaData;
+
+// Function to create a new TamaEntity instance for testing
+export const mockTamaEntity = (): TamaEntity => {
+  const data = {
+    ...mockTamaData,
+    createdAt: Date.now(),
+    lastInteraction: Date.now()
+  };
+  return new TamaEntity(data);
 };
 
 export const createMockTama = () => ({
@@ -53,7 +72,13 @@ export const createMockTama = () => ({
     jobsCompleted: 0
   },
   createdAt: Date.now(),
-  lastInteraction: Date.now()
+  lastInteraction: Date.now(),
+  sleepState: {
+    isAsleep: false,
+    sleepStartTime: 0,
+    energyRecoveryRate: 2,
+    canAutoWakeup: false
+  }
 });
 
 export const createMockGameState = () => ({

@@ -47,6 +47,12 @@ export interface TamaData {
   skills?: Record<string, number>;
   createdAt: number;
   lastInteraction: number;
+  sleepState?: {
+    isAsleep: boolean;
+    sleepStartTime: number;
+    energyRecoveryRate: number; // energy per minute while sleeping
+    canAutoWakeup: boolean; // unlocked through skills/upgrades
+  };
 }
 
 export interface InteractionResult {

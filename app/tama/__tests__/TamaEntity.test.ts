@@ -206,6 +206,180 @@ describe('TamaEntity', () => {
       expect(deserialized.experience).toBe(original.experience);
       expect(deserialized.needs.hunger).toBe(original.needs.hunger);
       expect(deserialized.stats.totalInteractions).toBe(original.stats.totalInteractions);
+      expect(deserialized.sleepState).toEqual(original.sleepState);
+    });
+  });
+
+  describe('Sleep System', () => {
+    it('should have initial sleep state when created', () => {
+      const tama = TamaEntity.createRandom('Sleepy');
+
+      expect(tama.sleepState).toBeDefined();
+      expect(tama.sleepState.isAsleep).toBe(false);
+      expect(tama.sleepState.sleepStartTime).toBe(0);
+      expect(tama.sleepState.energyRecoveryRate).toBe(2); // 2 energy per minute
+      expect(tama.sleepState.canAutoWakeup).toBe(false);
+    });
+
+    it('should automatically fall asleep when energy drops to 20% or below', () => {
+      const tama = mockTamaEntity();
+      tama.needs.energy = 25; // Above threshold
+
+      tama.updateNeeds();
+      expect(tama.sleepState.isAsleep).toBe(false);
+
+      tama.needs.energy = 20; // At threshold
+      tama.updateNeeds();
+      expect(tama.sleepState.isAsleep).toBe(true);
+      expect(tama.sleepState.sleepStartTime).toBeGreaterThan(0);
+
+      tama.needs.energy = 15; // Below threshold
+      tama.updateNeeds();
+      expect(tama.sleepState.isAsleep).toBe(true); // Should stay asleep
+    });
+
+    it('should not fall asleep if already asleep', () => {
+      const tama = mockTamaEntity();
+      tama.needs.energy = 10;
+
+      tama.updateNeeds();
+      expect(tama.sleepState.isAsleep).toBe(true);
+
+      const originalSleepStartTime = tama.sleepState.sleepStartTime;
+      advanceTime(1000); // Advance 1 second
+
+      tama.updateNeeds();
+      expect(tama.sleepState.isAsleep).toBe(true);
+      expect(tama.sleepState.sleepStartTime).toBe(originalSleepStartTime); // Should not reset
+    });
+
+    it('should recover energy while sleeping at the specified rate', () => {
+      const tama = mockTamaEntity();
+      tama.needs.energy = 10;
+      tama.sleepState.energyRecoveryRate = 6; // 6 energy per minute for faster testing
+
+      // Fall asleep
+      tama.updateNeeds();
+      expect(tama.sleepState.isAsleep).toBe(true);
+
+      // Advance time by 5 minutes (300 seconds)
+      advanceTime(5 * 60 * 1000);
+
+      // Update needs should process sleep recovery
+      tama.updateNeeds();
+
+      // Should recover 6 * 5 = 30 energy (approximately due to floating point)
+      expect(tama.needs.energy).toBeCloseTo(40, 1); // 10 + 30 = 40
+    });
+
+    it('should not decay energy while sleeping', () => {
+      const tama = mockTamaEntity();
+      tama.needs.energy = 10;
+
+      // Fall asleep
+      tama.updateNeeds();
+      expect(tama.sleepState.isAsleep).toBe(true);
+
+      const sleepStartEnergy = tama.needs.energy;
+
+      // Advance time significantly
+      advanceTime(60 * 60 * 1000); // 1 hour
+
+      tama.updateNeeds();
+
+      // Energy should be higher due to recovery, not lower due to decay
+      expect(tama.needs.energy).toBeGreaterThanOrEqual(sleepStartEnergy);
+    });
+
+    it('should wake up manually when wakeUp() is called', () => {
+      const tama = mockTamaEntity();
+      tama.needs.energy = 10;
+
+      // Fall asleep
+      tama.updateNeeds();
+      expect(tama.sleepState.isAsleep).toBe(true);
+
+      // Wake up manually
+      const result = tama.wakeUp();
+
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('wakes up refreshed');
+      expect(result.experienceGained).toBe(1);
+      expect(tama.sleepState.isAsleep).toBe(false);
+      expect(tama.stats.totalInteractions).toBe(1);
+    });
+
+    it('should not wake up if already awake', () => {
+      const tama = mockTamaEntity();
+      tama.needs.energy = 90; // High energy, not sleeping
+
+      tama.updateNeeds();
+      expect(tama.sleepState.isAsleep).toBe(false);
+
+      const result = tama.wakeUp();
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('already awake');
+      expect(result.experienceGained).toBe(0);
+      expect(tama.stats.totalInteractions).toBe(0); // No interaction counted
+    });
+
+    it('should auto wake up when energy reaches 95% if canAutoWakeup is enabled', () => {
+      const tama = mockTamaEntity();
+      tama.needs.energy = 10;
+      tama.sleepState.energyRecoveryRate = 20; // Fast recovery for testing
+      tama.sleepState.canAutoWakeup = true;
+
+      // Fall asleep
+      tama.updateNeeds();
+      expect(tama.sleepState.isAsleep).toBe(true);
+
+      // Advance time enough to recover to 95%
+      // Need to recover 85 energy at 20/minute = 4.25 minutes
+      advanceTime(5 * 60 * 1000); // 5 minutes
+
+      tama.updateNeeds();
+
+      expect(tama.needs.energy).toBeGreaterThanOrEqual(95);
+      expect(tama.sleepState.isAsleep).toBe(false); // Should auto wake up
+    });
+
+    it('should NOT auto wake up if canAutoWakeup is false, even with high energy', () => {
+      const tama = mockTamaEntity();
+      tama.needs.energy = 10;
+      tama.sleepState.energyRecoveryRate = 20;
+      tama.sleepState.canAutoWakeup = false; // Default early game setting
+
+      // Fall asleep
+      tama.updateNeeds();
+      expect(tama.sleepState.isAsleep).toBe(true);
+
+      // Advance time enough to recover to 100%
+      advanceTime(10 * 60 * 1000); // 10 minutes
+
+      tama.updateNeeds();
+
+      expect(tama.needs.energy).toBe(100); // Should be capped at 100
+      expect(tama.sleepState.isAsleep).toBe(true); // Should stay asleep (manual wake only)
+    });
+
+    it('should upgrade sleep abilities correctly', () => {
+      const tama = mockTamaEntity();
+
+      // Test recovery rate upgrade
+      tama.upgradeSleep(10, undefined);
+      expect(tama.sleepState.energyRecoveryRate).toBe(10);
+      expect(tama.sleepState.canAutoWakeup).toBe(false); // Should not change
+
+      // Test auto wakeup upgrade
+      tama.upgradeSleep(undefined, true);
+      expect(tama.sleepState.energyRecoveryRate).toBe(10); // Should not change
+      expect(tama.sleepState.canAutoWakeup).toBe(true);
+
+      // Test both upgrades
+      tama.upgradeSleep(15, false);
+      expect(tama.sleepState.energyRecoveryRate).toBe(15);
+      expect(tama.sleepState.canAutoWakeup).toBe(false);
     });
   });
 });
