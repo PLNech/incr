@@ -129,7 +129,7 @@ export interface BuildingType {
   id: string;
   name: string;
   description: string;
-  category: 'habitat' | 'workshop' | 'automation' | 'decoration' | 'prestige' | 'business' | 'adventure' | 'training' | 'social' | 'management' | 'production';
+  category: 'habitat' | 'workshop' | 'automation' | 'decoration' | 'prestige' | 'business' | 'adventure' | 'training' | 'social' | 'management' | 'production' | 'breeding' | 'research';
   cost: Record<string, number>;
   effects: {
     tamaCapacity?: number;
@@ -177,6 +177,11 @@ export interface BuildingType {
     alchemyExperimentationEnabled?: boolean;
     recipeDiscoveryRate?: number;
     experimentSuccessBonus?: number;
+
+    // Breeding system effects
+    breedingBonus?: number;
+    speciesUnlock?: number;
+    tierBonusRate?: number;
   };
   jobSlots?: number; // How many Tamas can be assigned to work here
   maxLevel: number;

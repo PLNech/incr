@@ -1,4 +1,4 @@
-import { TamaGameState, GameEvent, GameEventCallback, TamaData, TamaTier } from '../types';
+import { TamaGameState, GameEvent, GameEventCallback, TamaData, TamaTier, TamaSpecies, TamaGenetics } from '../types';
 import { AdvancedTamaData } from '../types-advanced';
 import { TamaEntity } from './TamaEntity';
 import { SystemOrchestrator } from './SystemOrchestrator';
@@ -261,9 +261,21 @@ export class TamaEngine {
     return { ...this.gameState };
   }
 
-  createTama(name: string): TamaData {
-    const tama = TamaEntity.createRandom(name);
-    const tamaData = tama.serialize();
+  createTama(name: string, species?: TamaSpecies, tier?: TamaTier, genetics?: TamaGenetics): TamaData {
+    let tamaData: TamaData;
+
+    if (species && tier !== undefined && genetics) {
+      // Enhanced creation with specific parameters
+      const tama = TamaEntity.createSpecific(name, species, tier, genetics);
+      tamaData = tama.serialize();
+
+      // Apply building bonuses
+      this.applyCreationBonuses(tamaData);
+    } else {
+      // Legacy simple creation
+      const tama = TamaEntity.createRandom(name);
+      tamaData = tama.serialize();
+    }
 
     this.gameState.tamas.push(tamaData);
     this.gameState.statistics.totalTamasRaised++;
@@ -293,6 +305,32 @@ export class TamaEngine {
     });
 
     return tamaData;
+  }
+
+  private applyCreationBonuses(tamaData: TamaData): void {
+    // Apply nursery bonus (extra trait points)
+    const nursery = this.gameState.buildings?.find(b => b.type === 'nursery');
+    if (nursery) {
+      const bonus = nursery.level * 2; // 2 bonus points per level
+      tamaData.genetics.cuteness += bonus;
+      tamaData.genetics.intelligence += bonus;
+      tamaData.genetics.energy += bonus;
+      tamaData.genetics.appetite += bonus;
+    }
+
+    // Apply research lab bonus (tier bonuses)
+    const researchLab = this.gameState.buildings?.find(b => b.type === 'research_lab');
+    if (researchLab && tamaData.tier > 0) {
+      const tierBonus = researchLab.level * 0.1; // 10% bonus per level
+      Object.keys(tamaData.genetics).forEach(trait => {
+        (tamaData.genetics as any)[trait] *= (1 + tierBonus);
+      });
+    }
+
+    // Cap genetics at reasonable values
+    Object.keys(tamaData.genetics).forEach(trait => {
+      (tamaData.genetics as any)[trait] = Math.min((tamaData.genetics as any)[trait], 100);
+    });
   }
 
   interactWithTama(tamaId: string, action: 'feed' | 'play' | 'clean' | 'wakeUp', item?: string): boolean {

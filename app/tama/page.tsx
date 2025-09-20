@@ -16,7 +16,9 @@ import { SaveMenuModal } from './components/SaveMenuModal';
 import { AdventureModal } from './components/AdventureModal';
 import { GardenView } from './components/GardenView';
 import { CompensationModal } from './components/CompensationModal';
+import { TamaCreationModal } from './components/TamaCreationModal';
 import { CompensationManager } from './services/CompensationManager';
+import { useButtonDebounce } from './utils/debounce';
 import { SimpleContractManager } from './systems/SimpleContractManager';
 import { SimpleContract } from './types-simple-contracts';
 import debugConsole from './debug/DebugConsole';
@@ -38,6 +40,7 @@ function TamaGameContent() {
   const [showContractsModal, setShowContractsModal] = useState<boolean>(false);
   const [showSaveMenuModal, setShowSaveMenuModal] = useState<boolean>(false);
   const [showAdventureModal, setShowAdventureModal] = useState<boolean>(false);
+  const [showTamaCreationModal, setShowTamaCreationModal] = useState<boolean>(false);
   const [currentView, setCurrentView] = useState<'pets' | 'garden'>('pets');
   const [compensationData, setCompensationData] = useState<any>(null);
   const [contractManager] = useState(() => new SimpleContractManager());
@@ -73,21 +76,26 @@ function TamaGameContent() {
     }
   };
 
-  const handleCreateTama = () => {
-    if (engine && isLoaded) {
-      const name = prompt('What would you like to name your new Tama?') || 'Buddy';
-      engine.createTama(name);
-      // Show celebration notification for creating Tama
-      addNotification(`🐣 ${name} hatched! +10 XP`, 'xp', 3000);
+  const handleCreateTama = useButtonDebounce(() => {
+    if (gameState.progression.level >= 2) {
+      // Use advanced creation modal for level 2+
+      setShowTamaCreationModal(true);
+    } else {
+      // Simple creation for beginners
+      if (engine && isLoaded) {
+        const name = prompt('What would you like to name your new Tama?') || 'Buddy';
+        engine.createTama(name);
+        addNotification(`🐣 ${name} hatched! +10 XP`, 'xp', 3000);
 
-      // Show helpful tip for new users
-      if (gameState.tamas.length === 0) {
-        setTimeout(() => {
-          addNotification('💡 Watch your Tama\'s needs and interact when they\'re low!', 'info', 5000);
-        }, 2000);
+        // Show helpful tip for new users
+        if (gameState.tamas.length === 0) {
+          setTimeout(() => {
+            addNotification('💡 Watch your Tama\'s needs and interact when they\'re low!', 'info', 5000);
+          }, 2000);
+        }
       }
     }
-  };
+  }, 600);
 
   // Level up detection
   useEffect(() => {
@@ -598,6 +606,15 @@ function TamaGameContent() {
           compensationData={compensationData}
         />
       )}
+
+      {/* Enhanced Tama Creation Modal */}
+      <TamaCreationModal
+        isVisible={showTamaCreationModal}
+        onClose={() => setShowTamaCreationModal(false)}
+        gameState={gameState}
+        engine={engine}
+        onNotification={addNotification}
+      />
     </div>
   );
 }

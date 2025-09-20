@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { TamaData, TamaGameState } from '../types';
+import { getSpeciesTheme, getRarityEffect, getTamaDisplayName } from '../utils/tamaVisuals';
+import { useButtonDebounce } from '../utils/debounce';
 
 interface TamaCardProps {
   tama: TamaData;
@@ -9,27 +11,6 @@ interface TamaCardProps {
   onInteract: (tamaId: string, action: 'feed' | 'play' | 'clean' | 'wakeUp') => void;
 }
 
-const getSpeciesEmoji = (species: string): string => {
-  const emojiMap: Record<string, string> = {
-    basic: '🐾',
-    forest: '🌲',
-    aquatic: '🌊',
-    crystal: '💎',
-    shadow: '🌙',
-    cosmic: '⭐'
-  };
-  return emojiMap[species] || '🐾';
-};
-
-const getTierColor = (tier: number): string => {
-  const colorMap: Record<number, string> = {
-    0: 'text-gray-600',
-    1: 'text-blue-600',
-    2: 'text-purple-600',
-    3: 'text-gold-600'
-  };
-  return colorMap[tier] || 'text-gray-600';
-};
 
 // Enhanced visual language system for needs
 const getNeedEmoji = (need: string, value: number): string => {
@@ -140,19 +121,20 @@ export const TamaCard: React.FC<TamaCardProps> = ({ tama, gameState, onInteract 
   const [isWiggling, setIsWiggling] = useState(false);
 
   const moodStatus = getMoodStatus(tama);
-  const speciesEmoji = getSpeciesEmoji(tama.species);
-  const tierColor = getTierColor(tama.tier);
+  const speciesTheme = getSpeciesTheme(tama.species);
+  const rarityEffect = getRarityEffect(tama.tier);
+  const displayName = getTamaDisplayName(tama.species);
 
   // Check if auto-feeder is present to change feed button behavior
   const hasAutoFeeder = gameState?.buildings?.some(b => b.type === 'auto_feeder') || false;
 
-  const handleInteract = (action: 'feed' | 'play' | 'clean' | 'wakeUp') => {
+  const handleInteract = useButtonDebounce((action: 'feed' | 'play' | 'clean' | 'wakeUp') => {
     onInteract(tama.id, action);
 
     // Trigger wiggle animation for interaction feedback
     setIsWiggling(true);
     setTimeout(() => setIsWiggling(false), 600);
-  };
+  }, 500);
 
   // Check if Tama is asleep
   const isAsleep = tama.sleepState?.isAsleep || false;
@@ -266,26 +248,30 @@ export const TamaCard: React.FC<TamaCardProps> = ({ tama, gameState, onInteract 
 
   return (
     <div
-      className="bg-white rounded-lg shadow-md p-4 border border-gray-200 card-hover-lift interactive-glow"
+      className={`bg-white rounded-lg shadow-md border-2 card-hover-lift interactive-glow ${speciesTheme.border} ${rarityEffect.glow}`}
+      style={{ background: `linear-gradient(135deg, white 0%, ${speciesTheme.secondary.replace('bg-', '')} 100%)` }}
       aria-label={`Tama card for ${tama.name}`}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          <span className={`text-2xl ${isWiggling ? 'tama-wiggle' : ''}`} role="img" aria-label={`${tama.species} tama`}>
-            {speciesEmoji}
-          </span>
-          <div>
-            <h3 className="text-lg font-bold text-gray-800">{tama.name}</h3>
-            <p className="text-sm text-gray-600 capitalize">
-              {tama.species} • <span className={tierColor}>Tier {tama.tier}</span>
-            </p>
+      {/* Header with Species Theme */}
+      <div className={`${speciesTheme.primary} text-white rounded-t-lg p-4 mb-3`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <span className={`text-3xl ${isWiggling ? 'tama-wiggle' : ''}`} role="img" aria-label={`${tama.species} tama`}>
+              {speciesTheme.emoji}
+            </span>
+            <div>
+              <h3 className="text-xl font-bold">{tama.name}</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-sm opacity-80">{displayName}</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${rarityEffect.background} ${rarityEffect.color} border border-white border-opacity-50`}>
+                  {rarityEffect.name}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="text-right">
-          <div className="text-sm font-medium text-gray-700">Level {tama.level}</div>
-          <div className="text-xs text-gray-500">
-            Status: <span className="capitalize">{moodStatus}</span>
+          <div className="text-right">
+            <div className="text-lg font-bold">Lv.{tama.level}</div>
+            <div className="text-sm opacity-80 capitalize">{moodStatus}</div>
           </div>
         </div>
       </div>

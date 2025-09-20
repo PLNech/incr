@@ -1,6 +1,43 @@
 import { BuildingType } from '../types';
 
 export const BUILDING_TYPES: BuildingType[] = [
+  // Tama Creation Enhancement Buildings
+  {
+    id: 'nursery',
+    name: 'Nursery',
+    description: 'Advanced breeding facility that enhances Tama creation with extra trait points',
+    category: 'breeding',
+    cost: {
+      tamaCoins: 300,
+      bamboo_fiber: 10,
+      silk_thread: 5
+    },
+    effects: {
+      tamaCapacity: 1,
+      breedingBonus: 1
+    },
+    maxLevel: 10,
+    requiredLevel: 4,
+    unlockConditions: []
+  },
+  {
+    id: 'research_lab',
+    name: 'Research Lab',
+    description: 'Unlocks rare species and tier bonuses for Tama creation',
+    category: 'research',
+    cost: {
+      tamaCoins: 500,
+      bamboo_fiber: 8,
+      spirit_essence: 3
+    },
+    effects: {
+      speciesUnlock: 1,
+      tierBonusRate: 0.1
+    },
+    maxLevel: 5,
+    requiredLevel: 6,
+    unlockConditions: []
+  },
   {
     id: 'basic_habitat',
     name: 'Basic Habitat',

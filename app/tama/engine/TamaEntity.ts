@@ -90,6 +90,41 @@ export class TamaEntity {
     return new TamaEntity(data);
   }
 
+  static createSpecific(name: string, species: TamaSpecies, tier: TamaTier, genetics: TamaGenetics): TamaEntity {
+    const id = `tama-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    const data: TamaData = {
+      id,
+      name,
+      species,
+      tier,
+      level: 1,
+      experience: 0,
+      genetics: { ...genetics },
+      needs: {
+        hunger: 100,
+        happiness: 100,
+        energy: 100,
+        cleanliness: 100
+      },
+      stats: {
+        totalInteractions: 0,
+        hoursLived: 0,
+        jobsCompleted: 0
+      },
+      createdAt: Date.now(),
+      lastInteraction: Date.now(),
+      sleepState: {
+        isAsleep: false,
+        sleepStartTime: 0,
+        energyRecoveryRate: 2, // 2 energy per minute (base rate)
+        canAutoWakeup: false  // unlocked through progression
+      }
+    };
+
+    return new TamaEntity(data);
+  }
+
   private static calculateTier(avgGenetics: number): TamaTier {
     const roll = Math.random() * 100;
 
