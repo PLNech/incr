@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { TamaGameState, Customer, Contract } from '../types';
 import { TamaEngine } from '../engine/TamaEngine';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 interface ContractsModalProps {
   isVisible: boolean;
@@ -20,6 +21,8 @@ export const ContractsModal: React.FC<ContractsModalProps> = ({
   onNotification
 }) => {
   const [selectedTab, setSelectedTab] = useState<'customers' | 'active' | 'history'>('customers');
+
+  useEscapeKey(onClose, isVisible);
 
   if (!isVisible) return null;
 

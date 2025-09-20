@@ -12,6 +12,7 @@ import { SkillsModal } from './components/SkillsModal';
 import { BuildingsModal } from './components/BuildingsModal';
 import { CraftingModal } from './components/CraftingModal';
 import { ContractsModal } from './components/ContractsModal';
+import { SaveMenuModal } from './components/SaveMenuModal';
 import debugConsole from './debug/DebugConsole';
 
 interface Notification {
@@ -30,6 +31,7 @@ function TamaGameContent() {
   const [showBuildingsModal, setShowBuildingsModal] = useState<boolean>(false);
   const [showCraftingModal, setShowCraftingModal] = useState<boolean>(false);
   const [showContractsModal, setShowContractsModal] = useState<boolean>(false);
+  const [showSaveMenuModal, setShowSaveMenuModal] = useState<boolean>(false);
 
   const addNotification = (message: string, type: 'xp' | 'levelup' | 'achievement' | 'info' = 'info', duration = 3000) => {
     const notification: Notification = {
@@ -268,6 +270,7 @@ function TamaGameContent() {
                 <TamaCard
                   key={tama.id}
                   tama={tama}
+                  gameState={gameState}
                   onInteract={handleTamaInteract}
                 />
               ))}
@@ -366,9 +369,9 @@ function TamaGameContent() {
             <div className="space-y-2">
               <button
                 className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded text-sm transition-colors"
-                onClick={() => engine?.save()}
+                onClick={() => setShowSaveMenuModal(true)}
               >
-                💾 Save Game
+                💾 Save Menu
               </button>
               <button
                 className={`w-full py-2 px-3 rounded text-sm transition-colors ${
@@ -469,6 +472,14 @@ function TamaGameContent() {
         isVisible={showContractsModal}
         onClose={() => setShowContractsModal(false)}
         gameState={gameState}
+        engine={engine}
+        onNotification={addNotification}
+      />
+
+      {/* Save Management System */}
+      <SaveMenuModal
+        isVisible={showSaveMenuModal}
+        onClose={() => setShowSaveMenuModal(false)}
         engine={engine}
         onNotification={addNotification}
       />

@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { TamaData } from '../types';
+import { TamaData, TamaGameState } from '../types';
 
 interface TamaCardProps {
   tama: TamaData;
+  gameState?: TamaGameState;
   onInteract: (tamaId: string, action: 'feed' | 'play' | 'clean' | 'wakeUp') => void;
 }
 
@@ -134,12 +135,15 @@ const getMoodStatus = (tama: TamaData): string => {
   return 'okay';
 };
 
-export const TamaCard: React.FC<TamaCardProps> = ({ tama, onInteract }) => {
+export const TamaCard: React.FC<TamaCardProps> = ({ tama, gameState, onInteract }) => {
   const [expanded, setExpanded] = useState(false);
 
   const moodStatus = getMoodStatus(tama);
   const speciesEmoji = getSpeciesEmoji(tama.species);
   const tierColor = getTierColor(tama.tier);
+
+  // Check if auto-feeder is present to change feed button behavior
+  const hasAutoFeeder = gameState?.buildings?.some(b => b.type === 'auto_feeder') || false;
 
   const handleInteract = (action: 'feed' | 'play' | 'clean' | 'wakeUp') => {
     onInteract(tama.id, action);
@@ -218,19 +222,24 @@ export const TamaCard: React.FC<TamaCardProps> = ({ tama, onInteract }) => {
     };
 
     const needValue = needMap[action];
+
+    // Auto-feeder changes feed button to candy button
     const actionEmoji = {
-      feed: '🍎',
+      feed: hasAutoFeeder ? '🍬' : '🍎',
       play: '🎾',
       clean: '🧽',
       wakeUp: '👁️'
     };
 
+    const actionName = action === 'feed' && hasAutoFeeder ? 'Candy' :
+                     action.charAt(0).toUpperCase() + action.slice(1);
+
     if (needValue <= 30) {
-      return `${actionEmoji[action]} ${action.toUpperCase()}!`;
+      return `${actionEmoji[action]} ${actionName.toUpperCase()}!`;
     } else if (needValue <= 60) {
-      return `${actionEmoji[action]} ${action.charAt(0).toUpperCase() + action.slice(1)}`;
+      return `${actionEmoji[action]} ${actionName}`;
     } else {
-      return `${actionEmoji[action]} ${action.charAt(0).toUpperCase() + action.slice(1)}`;
+      return `${actionEmoji[action]} ${actionName}`;
     }
   };
 

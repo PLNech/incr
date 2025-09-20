@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { TamaGameState, SkillTree } from '../types';
 import { TamaEngine } from '../engine/TamaEngine';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 interface SkillsModalProps {
   isVisible: boolean;
@@ -31,6 +32,8 @@ export const SkillsModal: React.FC<SkillsModalProps> = ({
   onNotification
 }) => {
   const [selectedTree, setSelectedTree] = useState<'caretaker' | 'breeder' | 'entrepreneur'>('caretaker');
+
+  useEscapeKey(onClose, isVisible);
 
   if (!isVisible || !engine) return null;
 

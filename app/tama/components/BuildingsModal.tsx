@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { TamaGameState, Building, BuildingType } from '../types';
 import { TamaEngine } from '../engine/TamaEngine';
 import { BUILDING_TYPES } from '../data/buildings';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 interface BuildingsModalProps {
   isVisible: boolean;
@@ -21,6 +22,8 @@ export const BuildingsModal: React.FC<BuildingsModalProps> = ({
   onNotification
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  useEscapeKey(onClose, isVisible);
 
   if (!isVisible) return null;
 

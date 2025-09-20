@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { TamaGameState } from '../types';
 import { TamaEngine } from '../engine/TamaEngine';
 import { RECIPES } from '../data/recipes';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 interface CraftingModalProps {
   isVisible: boolean;
@@ -23,6 +24,8 @@ export const CraftingModal: React.FC<CraftingModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedRecipe, setSelectedRecipe] = useState<string>('');
   const [craftQuantity, setCraftQuantity] = useState<number>(1);
+
+  useEscapeKey(onClose, isVisible);
 
   if (!isVisible) return null;
 
@@ -138,20 +141,20 @@ export const CraftingModal: React.FC<CraftingModalProps> = ({
                     const remaining = Math.max(0, item.endTime - now);
 
                     return (
-                      <div key={item.id} className="bg-white rounded-lg p-3 border">
+                      <div key={item.id} className="bg-white rounded-lg p-3 border shadow-sm">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <div className="font-medium text-sm">{recipe.name}</div>
-                            <div className="text-xs text-gray-500">x{item.quantity}</div>
+                            <div className="font-semibold text-sm text-gray-800">{recipe.name}</div>
+                            <div className="text-xs font-medium text-blue-600">x{item.quantity}</div>
                           </div>
-                          <div className="text-xs text-gray-500">
-                            {index === 0 ? (remaining > 0 ? formatTimeRemaining(remaining) : 'Done!') : 'Queued'}
+                          <div className="text-xs font-medium text-gray-700">
+                            {index === 0 ? (remaining > 0 ? formatTimeRemaining(remaining) : '✅ Done!') : '⏳ Queued'}
                           </div>
                         </div>
                         {index === 0 && (
                           <div className="w-full bg-gray-200 rounded-full h-2">
                             <div
-                              className="bg-blue-500 h-2 rounded-full transition-all duration-1000"
+                              className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-1000"
                               style={{ width: `${progress}%` }}
                             />
                           </div>
