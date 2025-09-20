@@ -27,7 +27,7 @@ describe('BuildingSystem', () => {
 
     it('should fail to place building if insufficient resources', () => {
       gameState.resources.tamaCoins = 0;
-      gameState.resources.wood = 0;
+      gameState.resources.bamboo_fiber = 0;
 
       const result = buildingSystem.placeBuilding('basic_habitat', gameState);
 
@@ -46,12 +46,12 @@ describe('BuildingSystem', () => {
 
     it('should consume resources when placing buildings', () => {
       const initialCoins = gameState.resources.tamaCoins;
-      const initialWood = gameState.resources.wood;
+      const initialBamboo = gameState.resources.bamboo_fiber;
 
       buildingSystem.placeBuilding('basic_habitat', gameState);
 
       expect(gameState.resources.tamaCoins).toBeLessThan(initialCoins);
-      expect(gameState.resources.wood).toBeLessThan(initialWood);
+      expect(gameState.resources.bamboo_fiber).toBeLessThan(initialBamboo);
     });
   });
 
@@ -72,7 +72,7 @@ describe('BuildingSystem', () => {
 
       // Drain resources
       gameState.resources.tamaCoins = 0;
-      gameState.resources.wood = 0;
+      gameState.resources.bamboo_fiber = 0;
 
       const result = buildingSystem.upgradeBuilding(buildingId, gameState);
 
@@ -135,13 +135,13 @@ describe('BuildingSystem', () => {
       const result = buildingSystem.placeBuilding('berry_farm', gameState);
       expect(result.success).toBe(true);
 
-      const initialBerries = gameState.resources.berries;
+      const initialRice = gameState.resources.rice_grain;
 
       // Advance time for passive income
       advanceTime(60000); // 1 minute
       buildingSystem.processBuildings(gameState);
 
-      expect(gameState.resources.berries).toBeGreaterThan(initialBerries);
+      expect(gameState.resources.rice_grain).toBeGreaterThan(initialRice);
     });
 
     it('should stack effects from multiple buildings', () => {
@@ -174,8 +174,8 @@ describe('BuildingSystem', () => {
 
     it('should auto-craft items from workshops', () => {
       // auto_workshop is already in unlocks from setup
-      gameState.resources.berries = 100;
-      gameState.resources.wood = 100;
+      gameState.resources.rice_grain = 100;
+      gameState.resources.bamboo_fiber = 100;
 
       const result = buildingSystem.placeBuilding('auto_workshop', gameState);
       expect(result.success).toBe(true);
@@ -185,13 +185,13 @@ describe('BuildingSystem', () => {
 
       buildingSystem.setAutoCraftingRecipe(buildingId!, 'basic_food', gameState);
 
-      const initialBerries = gameState.resources.berries;
+      const initialRice = gameState.resources.rice_grain;
 
       advanceTime(120000); // 2 minutes
       buildingSystem.processBuildings(gameState);
 
       // Should have consumed resources and created items
-      expect(gameState.resources.berries).toBeLessThan(initialBerries);
+      expect(gameState.resources.rice_grain).toBeLessThan(initialRice);
     });
 
     it('should respect resource limits for automation', () => {
@@ -199,14 +199,14 @@ describe('BuildingSystem', () => {
       const result = buildingSystem.placeBuilding('auto_feeder', gameState);
       expect(result.success).toBe(true);
 
-      // No berries available
-      gameState.resources.berries = 0;
+      // No rice available
+      gameState.resources.rice_grain = 0;
       gameState.tamas[0].needs.hunger = 30;
       const initialHunger = gameState.tamas[0].needs.hunger;
 
       buildingSystem.processBuildings(gameState);
 
-      // Should not feed without berries
+      // Should not feed without rice
       expect(gameState.tamas[0].needs.hunger).toBe(initialHunger);
     });
   });
@@ -303,7 +303,7 @@ describe('BuildingSystem', () => {
     it('should provide massive bonuses for prestige buildings', () => {
       gameState.progression.prestigeLevel = 1;
       gameState.unlocks.buildings.push('crystal_generator');
-      gameState.resources.evolutionCrystals = 10;
+      gameState.resources.spirit_essence = 10;
 
       buildingSystem.placeBuilding('crystal_generator', gameState);
 

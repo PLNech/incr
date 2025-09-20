@@ -12,9 +12,11 @@ export interface SimpleContract {
   requirements: SimpleContractRequirement;
   reward: {
     tamaCoins: number;
-    berries?: number;
-    wood?: number;
-    stone?: number;
+    rice_grain?: number;
+    bamboo_fiber?: number;
+    silk_thread?: number;
+    green_tea_leaf?: number;
+    spirit_essence?: number;
     experience?: number;
   };
 

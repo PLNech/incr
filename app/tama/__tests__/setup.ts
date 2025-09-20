@@ -84,11 +84,12 @@ export const createMockTama = () => ({
 export const createMockGameState = () => ({
   resources: {
     tamaCoins: 1000,
-    berries: 100,
-    wood: 50,
-    stone: 20,
-    happinessStars: 0,
-    evolutionCrystals: 10
+    rice_grain: 50,
+    bamboo_fiber: 30,
+    silk_thread: 15,
+    green_tea_leaf: 25,
+    spirit_essence: 5,
+    happinessStars: 10
   },
   tamas: [createMockTama()],
   buildings: [],
@@ -119,7 +120,7 @@ export const createMockGameState = () => ({
     }
   },
   unlocks: {
-    buildings: ['basic_habitat', 'crafting_workshop', 'berry_farm', 'auto_feeder', 'auto_workshop', 'crystal_generator'],
+    buildings: ['basic_habitat', 'crafting_workshop', 'rice_farm', 'auto_feeder', 'auto_workshop', 'crystal_generator', 'alchemy_lab'],
     recipes: ['basic_food'],
     species: ['basic']
   },

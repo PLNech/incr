@@ -62,8 +62,10 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
           className={`
             ${getNotificationStyle(notification.type)}
             px-4 py-2 rounded-lg shadow-lg
-            transform transition-all duration-500 ease-in-out
-            animate-slide-in-right
+            notification-enter
+            ${notification.type === 'xp' ? 'xp-gain' : ''}
+            ${notification.type === 'levelup' ? 'level-up-glow celebrate-pop' : ''}
+            ${notification.type === 'achievement' ? 'celebrate-pop' : ''}
           `}
         >
           <div className="flex items-center space-x-2">

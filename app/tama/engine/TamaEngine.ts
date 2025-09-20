@@ -43,12 +43,13 @@ export class TamaEngine {
   private createInitialState(overrides?: Partial<TamaGameState>): TamaGameState {
     const defaultState: TamaGameState = {
       resources: {
-        tamaCoins: 150, // +50% more starting coins for better early game flexibility
-        berries: 15,    // +50% more berries for feeding Tamas
-        wood: 8,        // +60% more wood to reduce early building bottleneck
-        stone: 4,       // Doubled stone for better crafting options
-        happinessStars: 0,
-        evolutionCrystals: 0
+        tamaCoins: 200,        // Starting coins for early purchases
+        rice_grain: 20,        // Food crafting materials
+        bamboo_fiber: 15,      // Building materials
+        silk_thread: 8,        // Textile materials
+        green_tea_leaf: 12,    // Medicine/spiritual materials
+        spirit_essence: 2,     // Rare essence for advanced crafting
+        happinessStars: 5      // Social currency
       },
       tamas: [],
       buildings: [],

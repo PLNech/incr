@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useEscapeKey } from '../hooks/useEscapeKey';
+import { getResourceIcon, getResourceName } from '../utils/resourceUtils';
+import { GameResources } from '../types';
 
 interface CompensationMessage {
   title: string;
@@ -14,7 +16,7 @@ interface CompensationModalProps {
   compensationData: {
     message: CompensationMessage;
     rewards: {
-      resources: Record<string, number>;
+      resources: Partial<GameResources>;
       tamaName: string;
       tamaSpecies: string;
       tamaTier: number;
@@ -45,29 +47,6 @@ export const CompensationModal: React.FC<CompensationModalProps> = ({
 
   const { message, rewards } = compensationData;
 
-  const getResourceIcon = (resourceKey: string) => {
-    const icons: Record<string, string> = {
-      tamaCoins: '🪙',
-      berries: '🍎',
-      wood: '🪵',
-      stone: '🪨',
-      happinessStars: '⭐',
-      evolutionCrystals: '💎'
-    };
-    return icons[resourceKey] || '📦';
-  };
-
-  const formatResourceName = (resourceKey: string) => {
-    const names: Record<string, string> = {
-      tamaCoins: 'Tama Coins',
-      berries: 'Berries',
-      wood: 'Wood',
-      stone: 'Stone',
-      happinessStars: 'Happiness Stars',
-      evolutionCrystals: 'Evolution Crystals'
-    };
-    return names[resourceKey] || resourceKey;
-  };
 
   const getTierColor = (tier: number) => {
     const colors = ['text-gray-600', 'text-green-600', 'text-blue-600', 'text-purple-600'];
@@ -124,9 +103,9 @@ export const CompensationModal: React.FC<CompensationModalProps> = ({
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 {Object.entries(rewards.resources).map(([key, value]) => (
                   <div key={key} className="bg-white rounded-lg p-3 border border-yellow-200 text-center">
-                    <div className="text-2xl mb-1">{getResourceIcon(key)}</div>
-                    <div className="font-bold text-lg text-gray-800">{value.toLocaleString()}</div>
-                    <div className="text-xs text-gray-600">{formatResourceName(key)}</div>
+                    <div className="text-2xl mb-1">{getResourceIcon(key as keyof GameResources)}</div>
+                    <div className="font-bold text-lg text-gray-800">{value!.toLocaleString()}</div>
+                    <div className="text-xs text-gray-600">{getResourceName(key as keyof GameResources)}</div>
                   </div>
                 ))}
               </div>

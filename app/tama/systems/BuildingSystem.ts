@@ -210,15 +210,15 @@ export class BuildingSystem {
   }
 
   private processAutoFeeding(building: Building, efficiency: number, gameState: TamaGameState): void {
-    // Find hungry Tamas and feed them if we have berries
+    // Find hungry Tamas and feed them if we have rice grain
     const hungryTamas = gameState.tamas.filter(tama => tama.needs.hunger < 70);
     const maxFeeds = Math.floor(building.level * efficiency);
 
     let feedsPerformed = 0;
     for (const tama of hungryTamas) {
-      if (feedsPerformed >= maxFeeds || gameState.resources.berries < 1) break;
+      if (feedsPerformed >= maxFeeds || gameState.resources.rice_grain < 1) break;
 
-      gameState.resources.berries--;
+      gameState.resources.rice_grain--;
       tama.needs.hunger = Math.min(100, tama.needs.hunger + 20);
       feedsPerformed++;
     }
@@ -229,11 +229,11 @@ export class BuildingSystem {
 
     // This would integrate with CraftingSystem - for now just simulate basic resource consumption
     const recipe = building.config.autoCraftRecipe;
-    if (recipe === 'basic_food' && gameState.resources.berries >= 2 && gameState.resources.wood >= 1) {
+    if (recipe === 'basic_food' && gameState.resources.rice_grain >= 2 && gameState.resources.bamboo_fiber >= 1) {
       const craftCount = Math.floor(building.level * efficiency);
       if (craftCount > 0) {
-        gameState.resources.berries -= 2 * craftCount;
-        gameState.resources.wood -= 1 * craftCount;
+        gameState.resources.rice_grain -= 2 * craftCount;
+        gameState.resources.bamboo_fiber -= 1 * craftCount;
         // Would add crafted items to inventory when inventory system is implemented
       }
     }

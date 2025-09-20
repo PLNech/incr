@@ -57,10 +57,11 @@ export class DebugConsole {
     const engine = this.requireEngine();
     const gameState = engine.getGameState();
     gameState.resources.tamaCoins += 1000 * multiplier;
-    gameState.resources.berries += 500 * multiplier;
-    gameState.resources.wood += 200 * multiplier;
-    gameState.resources.stone += 100 * multiplier;
-    gameState.resources.evolutionCrystals += 50 * multiplier;
+    gameState.resources.rice_grain += 100 * multiplier;
+    gameState.resources.bamboo_fiber += 75 * multiplier;
+    gameState.resources.silk_thread += 30 * multiplier;
+    gameState.resources.green_tea_leaf += 50 * multiplier;
+    gameState.resources.spirit_essence += 10 * multiplier;
     console.log(`Added resources (x${multiplier}):`, gameState.resources);
   }
 

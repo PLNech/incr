@@ -7,6 +7,8 @@ import { BUILDING_TYPES } from '../data/buildings';
 import { useEscapeKey } from '../hooks/useEscapeKey';
 import { TutorialOverlay } from './TutorialOverlay';
 import { TUTORIAL_STEPS } from '../data/tutorialSteps';
+import { AlchemyLabModal } from './AlchemyLabModal';
+import { formatResourceCost } from '../utils/resourceUtils';
 
 interface BuildingsModalProps {
   isVisible: boolean;
@@ -25,6 +27,7 @@ export const BuildingsModal: React.FC<BuildingsModalProps> = ({
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
+  const [showAlchemyLab, setShowAlchemyLab] = useState<boolean>(false);
 
   useEscapeKey(onClose, isVisible);
 
@@ -59,11 +62,12 @@ export const BuildingsModal: React.FC<BuildingsModalProps> = ({
     const cost = buildingType.cost;
     return (
       (cost.tamaCoins || 0) <= gameState.resources.tamaCoins &&
-      (cost.berries || 0) <= gameState.resources.berries &&
-      (cost.wood || 0) <= gameState.resources.wood &&
-      (cost.stone || 0) <= gameState.resources.stone &&
-      (cost.happinessStars || 0) <= gameState.resources.happinessStars &&
-      (cost.evolutionCrystals || 0) <= gameState.resources.evolutionCrystals
+      (cost.rice_grain || 0) <= gameState.resources.rice_grain &&
+      (cost.bamboo_fiber || 0) <= gameState.resources.bamboo_fiber &&
+      (cost.silk_thread || 0) <= gameState.resources.silk_thread &&
+      (cost.green_tea_leaf || 0) <= gameState.resources.green_tea_leaf &&
+      (cost.spirit_essence || 0) <= gameState.resources.spirit_essence &&
+      (cost.happinessStars || 0) <= gameState.resources.happinessStars
     );
   };
 
@@ -72,16 +76,6 @@ export const BuildingsModal: React.FC<BuildingsModalProps> = ({
            gameState.unlocks.buildings.includes(buildingType.id);
   };
 
-  const formatCost = (cost: any): string => {
-    const parts: string[] = [];
-    if (cost.tamaCoins) parts.push(`${cost.tamaCoins} 🪙`);
-    if (cost.berries) parts.push(`${cost.berries} 🍎`);
-    if (cost.wood) parts.push(`${cost.wood} 🪵`);
-    if (cost.stone) parts.push(`${cost.stone} 🪨`);
-    if (cost.happinessStars) parts.push(`${cost.happinessStars} ⭐`);
-    if (cost.evolutionCrystals) parts.push(`${cost.evolutionCrystals} 💎`);
-    return parts.join(', ');
-  };
 
   const availableBuildings = BUILDING_TYPES.filter(building =>
     selectedCategory === 'all' || building.category === selectedCategory
@@ -161,12 +155,31 @@ export const BuildingsModal: React.FC<BuildingsModalProps> = ({
 
                         <p className="text-xs text-gray-600 mb-3">{buildingType.description}</p>
 
+                        {/* Special Alchemy Lab Controls */}
+                        {buildingType.id === 'alchemy_lab' && (
+                          <div className="mb-3 p-2 bg-purple-50 border border-purple-200 rounded">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-medium text-purple-700">🧪 Lab Status</span>
+                              <span className="text-xs text-purple-600">Level {building.level}/10</span>
+                            </div>
+                            <div className="text-xs text-purple-600 mb-2">
+                              Success Rate: ~{Math.min(85, 20 + (building.level * 5))}% (with skilled Tama)
+                            </div>
+                            <button
+                              onClick={() => setShowAlchemyLab(true)}
+                              className="w-full bg-purple-500 hover:bg-purple-600 text-white py-1 px-2 rounded text-xs transition-colors"
+                            >
+                              🔬 Start Experiments
+                            </button>
+                          </div>
+                        )}
+
                         {building.level < buildingType.maxLevel && (
                           <button
                             onClick={() => handleUpgradeBuilding(building.id)}
                             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-sm transition-colors"
                           >
-                            🔧 Upgrade
+                            🔧 Upgrade ({buildingType.id === 'alchemy_lab' ? `+5% success rate` : 'Improve'})
                           </button>
                         )}
                       </div>
@@ -206,7 +219,7 @@ export const BuildingsModal: React.FC<BuildingsModalProps> = ({
                       <p className="text-sm text-gray-600 mb-3">{buildingType.description}</p>
 
                       <div className="text-xs text-gray-500 mb-3">
-                        <div data-tutorial="building-cost">Cost: {formatCost(buildingType.cost)}</div>
+                        <div data-tutorial="building-cost">Cost: {formatResourceCost(buildingType.cost)}</div>
                         <div className="mt-1" data-tutorial="building-effects">
                           Effects: {Object.entries(buildingType.effects).map(([key, value]) =>
                             `${key.replace(/([A-Z])/g, ' $1').toLowerCase()}: +${value}`
@@ -247,6 +260,14 @@ export const BuildingsModal: React.FC<BuildingsModalProps> = ({
         onClose={() => setShowTutorial(false)}
         steps={TUTORIAL_STEPS.buildings}
         modalType="buildings"
+      />
+
+      {/* Alchemy Lab Modal */}
+      <AlchemyLabModal
+        isVisible={showAlchemyLab}
+        onClose={() => setShowAlchemyLab(false)}
+        gameState={gameState}
+        onNotification={onNotification}
       />
     </div>
   );

@@ -1,5 +1,7 @@
 // Service to manage compensation notifications and prevent duplicates
 
+import { GameResources } from '../types';
+
 interface CompensationMessage {
   title: string;
   message: string;
@@ -8,7 +10,7 @@ interface CompensationMessage {
 interface CompensationData {
   message: CompensationMessage;
   rewards: {
-    resources: Record<string, number>;
+    resources: Partial<GameResources>;
     tamaName: string;
     tamaSpecies: string;
     tamaTier: number;
@@ -102,11 +104,12 @@ export class CompensationManager {
       rewards: {
         resources: {
           tamaCoins: 500 * compensationMultiplier,
-          berries: 100 * compensationMultiplier,
-          wood: 50 * compensationMultiplier,
-          stone: 25 * compensationMultiplier,
-          happinessStars: 20 * compensationMultiplier,
-          evolutionCrystals: 10 * compensationMultiplier
+          rice_grain: 100 * compensationMultiplier,
+          bamboo_fiber: 50 * compensationMultiplier,
+          silk_thread: 25 * compensationMultiplier,
+          green_tea_leaf: 40 * compensationMultiplier,
+          spirit_essence: 10 * compensationMultiplier,
+          happinessStars: 20 * compensationMultiplier
         },
         tamaName,
         tamaSpecies: species,

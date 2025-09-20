@@ -32,19 +32,28 @@ app/                     # Next.js App Router pages
 ├── globals.css         # Global styles and Tailwind imports
 ├── slow-roast/         # Slow Roast coffee game
 │   └── page.tsx        # Game page and components
-└── berg/               # BergInc nightclub incremental game
+├── berg/               # BergInc nightclub incremental game
+│   ├── page.tsx        # Main game interface
+│   ├── types.ts        # Game state and type definitions
+│   ├── utils.ts        # Core game mechanics
+│   ├── quotes.ts       # Dynamic quote system
+│   ├── audio.ts        # Procedural audio generation
+│   ├── test-runner.ts  # Comprehensive test suite
+│   └── core/           # Modular game systems
+│       ├── engine/     # Core game engine
+│       ├── agents/     # Agent behavior system
+│       ├── systems/    # ECS-style game systems
+│       ├── map/        # Floor layouts and pathfinding
+│       └── rendering/  # Visual rendering systems
+└── tama/               # Tama Bokujō virtual pet management game
     ├── page.tsx        # Main game interface
     ├── types.ts        # Game state and type definitions
-    ├── utils.ts        # Core game mechanics
-    ├── quotes.ts       # Dynamic quote system
-    ├── audio.ts        # Procedural audio generation
-    ├── test-runner.ts  # Comprehensive test suite
-    └── core/           # Modular game systems
-        ├── engine/     # Core game engine
-        ├── agents/     # Agent behavior system
-        ├── systems/    # ECS-style game systems
-        ├── map/        # Floor layouts and pathfinding
-        └── rendering/  # Visual rendering systems
+    ├── components/     # UI components and modals
+    ├── systems/        # Game logic systems (jobs, contracts)
+    ├── services/       # External integrations
+    ├── data/           # Static game data (buildings, recipes)
+    ├── styles/         # Animation and styling definitions
+    └── providers/      # React context providers
 
 lib/                    # Core game logic and utilities
 ├── gameStateManager.ts # Cross-game state management system
@@ -172,6 +181,49 @@ BergInc features a comprehensive test suite with modular testing:
 - **Dynamic Theming**: Visual themes evolve as club becomes more commercial
 - **Procedural Audio**: Generated audio loops that change with game progression
 - **Quote System**: Contextual quotes that reflect the club's transformation
+
+## Animation & UI Design Principles
+
+### Tama Bokujō Animation System
+Based on research into thoughtful micro-interactions and delightful feedback in idle/incremental games:
+
+#### Core Animation Principles
+- **Meaningful Feedback**: Every user action gets immediate visual response
+- **System Status Communication**: Clear visual indicators of loading, progress, and completion states
+- **Natural Timing**: Use easing curves that feel organic (cubic-bezier functions)
+- **Accessibility First**: Respect `prefers-reduced-motion` for accessibility
+- **Performance**: Hardware-accelerated transforms, minimal layout thrashing
+
+#### Animation Timing Scale
+- **Instant (100ms)**: Button press feedback, micro-interactions
+- **Fast (200ms)**: Hover states, simple transitions
+- **Normal (300ms)**: Modal openings, tab switches
+- **Slow (500ms)**: Progress bars, celebrations
+- **Very Slow (800ms)**: Major state changes, achievements
+
+#### Key Animation Categories
+1. **Button States**: Hover lift, active press, ripple effects
+2. **Progress Feedback**: XP gains, resource increments, completion celebrations
+3. **Modal Transitions**: Smooth backdrop fades, content slide-ins
+4. **Card Interactions**: Tama card hover lifts, bounce-in animations
+5. **System Status**: Loading states, job assignment feedback, contract progress
+6. **Celebrations**: Level ups, achievements, successful completions
+
+#### UI Interaction Catalog
+- **Resource Bar**: Animated increment counters with pop-up values
+- **Tama Cards**: Hover lift, interaction button feedback, need bar animations
+- **Modal Systems**: Backdrop fade, content slide with back-easing
+- **Progress Bars**: Smooth fills with shimmer effects, pulse for active states
+- **Buttons**: Universal hover lift, active press, success ripple effects
+- **Notifications**: Slide-in from right, timed fade-out, celebration pops
+- **Job Assignments**: Success feedback, status change animations
+- **Contract Progress**: Real-time progress bars, completion celebrations
+
+### Implementation Standards
+- Use CSS custom properties for consistent timing/easing
+- Leverage Tailwind classes combined with custom CSS animations
+- Implement progressive enhancement (animations enhance, don't break functionality)
+- Test across devices and respect user motion preferences
 
 ## Response Protocol
 

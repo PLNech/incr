@@ -36,11 +36,12 @@ export class TamaGameStateAdapter {
       gameId: this.GAME_ID,
       resources: {
         tamaCoins: tamaState.resources.tamaCoins,
-        berries: tamaState.resources.berries,
-        wood: tamaState.resources.wood,
-        stone: tamaState.resources.stone,
-        happinessStars: tamaState.resources.happinessStars,
-        evolutionCrystals: tamaState.resources.evolutionCrystals
+        rice_grain: tamaState.resources.rice_grain,
+        bamboo_fiber: tamaState.resources.bamboo_fiber,
+        silk_thread: tamaState.resources.silk_thread,
+        green_tea_leaf: tamaState.resources.green_tea_leaf,
+        spirit_essence: tamaState.resources.spirit_essence,
+        happinessStars: tamaState.resources.happinessStars
       },
       achievements: achievementIds,
       progress: {
@@ -205,11 +206,12 @@ export class TamaGameStateAdapter {
     const compensatedState: TamaGameState = {
       resources: {
         tamaCoins: 500 * compensationMultiplier,
-        berries: 100 * compensationMultiplier,
-        wood: 50 * compensationMultiplier,
-        stone: 25 * compensationMultiplier,
-        happinessStars: 20 * compensationMultiplier,
-        evolutionCrystals: 10 * compensationMultiplier
+        rice_grain: 100 * compensationMultiplier,
+        bamboo_fiber: 50 * compensationMultiplier,
+        silk_thread: 25 * compensationMultiplier,
+        green_tea_leaf: 40 * compensationMultiplier,
+        spirit_essence: 10 * compensationMultiplier,
+        happinessStars: 20 * compensationMultiplier
       },
       tamas: [],
       buildings: [],

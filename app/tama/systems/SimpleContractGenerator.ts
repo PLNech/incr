@@ -1,7 +1,9 @@
 import { SimpleContract, SimpleContractType } from '../types-simple-contracts';
+import { ALL_CRAFTING_ITEMS } from '../data/japanese-crafting-items';
 
 export class SimpleContractGenerator {
   private contractIdCounter = 0;
+  private allCraftingItems = ALL_CRAFTING_ITEMS;
 
   generateRandomContract(): SimpleContract {
     const types: SimpleContractType[] = ['sales', 'crafting', 'care'];
@@ -20,28 +22,35 @@ export class SimpleContractGenerator {
   private generateSalesContract(): SimpleContract {
     const id = `sales-${++this.contractIdCounter}`;
 
-    // Different sales options
+    // Mix traditional resources with Tier 1 crafting materials
     const salesOptions = [
       {
-        type: 'berries',
+        type: 'rice_grain',
         quantity: 15 + Math.floor(Math.random() * 20),
-        pricePerUnit: 3 + Math.floor(Math.random() * 2),
-        title: 'Berry Buyer',
-        description: 'A local merchant wants to purchase fresh berries for their market stall.'
+        pricePerUnit: 4 + Math.floor(Math.random() * 3),
+        title: 'Rice Merchant',
+        description: 'A traditional sushi restaurant needs premium rice grain for their kitchen.'
       },
       {
-        type: 'wood',
+        type: 'bamboo_fiber',
         quantity: 8 + Math.floor(Math.random() * 12),
-        pricePerUnit: 8 + Math.floor(Math.random() * 4),
-        title: 'Wood Supplier Needed',
-        description: 'Construction company needs quality wood for their latest project.'
+        pricePerUnit: 6 + Math.floor(Math.random() * 4),
+        title: 'Bamboo Artisan',
+        description: 'Traditional craftsperson needs quality bamboo fiber for handmade tools.'
       },
       {
-        type: 'stone',
-        quantity: 5 + Math.floor(Math.random() * 8),
-        pricePerUnit: 15 + Math.floor(Math.random() * 8),
-        title: 'Stone Mason Request',
-        description: 'Artisan stone mason is looking for high-quality stone materials.'
+        type: 'silk_thread',
+        quantity: 3 + Math.floor(Math.random() * 6),
+        pricePerUnit: 18 + Math.floor(Math.random() * 10),
+        title: 'Silk Weaver',
+        description: 'Master textile artist seeks finest silk threads for ceremonial kimonos.'
+      },
+      {
+        type: 'green_tea_leaf',
+        quantity: 10 + Math.floor(Math.random() * 15),
+        pricePerUnit: 7 + Math.floor(Math.random() * 5),
+        title: 'Tea Master',
+        description: 'Renowned tea ceremony master needs premium green tea leaves.'
       }
     ];
 
@@ -74,38 +83,45 @@ export class SimpleContractGenerator {
   private generateCraftingContract(): SimpleContract {
     const id = `craft-${++this.contractIdCounter}`;
 
+    // Select random items from different tiers for varied contracts
+    const tier2Items = this.allCraftingItems.filter(item => item.tier === 2);
+    const tier3Items = this.allCraftingItems.filter(item => item.tier === 3);
+
     const craftingOptions = [
+      // Tier 2 contracts (easier, lower pay)
+      ...tier2Items.slice(0, 8).map(item => ({
+        itemId: item.id,
+        quantity: 2 + Math.floor(Math.random() * 3),
+        payment: 60 + Math.floor(Math.random() * 40),
+        title: `${item.name} Order`,
+        description: `Local artisan needs quality ${item.name.toLowerCase()} for their workshop.`
+      })),
+      // Tier 3 contracts (harder, higher pay)
+      ...tier3Items.slice(0, 6).map(item => ({
+        itemId: item.id,
+        quantity: 1 + Math.floor(Math.random() * 2),
+        payment: 120 + Math.floor(Math.random() * 80),
+        title: `Premium ${item.name}`,
+        description: `Discerning client seeks expertly crafted ${item.name.toLowerCase()}.`
+      })),
+      // Classic Tamagotchi items with special bonus
       {
-        itemId: 'basic_food',
+        itemId: 'bread',
         quantity: 3 + Math.floor(Math.random() * 4),
         payment: 80,
-        title: 'Food Delivery',
-        description: 'Busy Tama owner needs prepared meals for their pets.'
+        title: '🎮 Classic Tama Bread',
+        description: 'Nostalgic Tama owner wants authentic bread just like the original game!'
       },
       {
-        itemId: 'premium_food',
+        itemId: 'hamburger',
         quantity: 2 + Math.floor(Math.random() * 2),
         payment: 150,
-        title: 'Gourmet Catering',
-        description: 'Upscale Tama daycare wants premium food for their clients.'
-      },
-      {
-        itemId: 'simple_toy',
-        quantity: 2 + Math.floor(Math.random() * 3),
-        payment: 100,
-        title: 'Toy Commission',
-        description: 'Parents want handmade toys for their children\'s Tamas.'
-      },
-      {
-        itemId: 'complex_toy',
-        quantity: 1 + Math.floor(Math.random() * 2),
-        payment: 200,
-        title: 'Custom Toy Order',
-        description: 'Collector seeks rare, complex toys for their premium Tama collection.'
+        title: '🎮 Retro Hamburger',
+        description: 'Collector needs vintage-style hamburgers for their classic Tama collection.'
       }
     ];
 
-    const option = craftingOptions[Math.floor(Math.random() * craftingOptions.length)];
+    const option = craftingOptions[Math.floor(Math.random() * Math.min(craftingOptions.length, 20))];
 
     return {
       id,
@@ -183,7 +199,8 @@ export class SimpleContractGenerator {
 
       reward: {
         tamaCoins: option.payment,
-        berries: Math.floor(option.duration / 6) * 5, // 5 berries per 6 hours
+        rice_grain: Math.floor(option.duration / 8) * 3, // 3 rice per 8 hours
+        green_tea_leaf: Math.floor(option.duration / 12) * 2, // 2 tea per 12 hours
         experience: Math.floor(option.payment * 0.15) // 15% as XP
       },
 

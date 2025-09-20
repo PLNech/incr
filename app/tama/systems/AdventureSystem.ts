@@ -331,8 +331,11 @@ export class AdventureSystem {
     if (!location.costs) return true;
 
     if (location.costs.tamaCoins && gameState.resources.tamaCoins < location.costs.tamaCoins) return false;
-    if (location.costs.berries && gameState.resources.berries < location.costs.berries) return false;
-    if (location.costs.evolutionCrystals && gameState.resources.evolutionCrystals < location.costs.evolutionCrystals) return false;
+    if (location.costs.rice_grain && gameState.resources.rice_grain < location.costs.rice_grain) return false;
+    if (location.costs.bamboo_fiber && gameState.resources.bamboo_fiber < location.costs.bamboo_fiber) return false;
+    if (location.costs.silk_thread && gameState.resources.silk_thread < location.costs.silk_thread) return false;
+    if (location.costs.green_tea_leaf && gameState.resources.green_tea_leaf < location.costs.green_tea_leaf) return false;
+    if (location.costs.spirit_essence && gameState.resources.spirit_essence < location.costs.spirit_essence) return false;
 
     return true;
   }
@@ -342,8 +345,11 @@ export class AdventureSystem {
     if (!location.costs) return;
 
     if (location.costs.tamaCoins) gameState.resources.tamaCoins -= location.costs.tamaCoins;
-    if (location.costs.berries) gameState.resources.berries -= location.costs.berries;
-    if (location.costs.evolutionCrystals) gameState.resources.evolutionCrystals -= location.costs.evolutionCrystals;
+    if (location.costs.rice_grain) gameState.resources.rice_grain -= location.costs.rice_grain;
+    if (location.costs.bamboo_fiber) gameState.resources.bamboo_fiber -= location.costs.bamboo_fiber;
+    if (location.costs.silk_thread) gameState.resources.silk_thread -= location.costs.silk_thread;
+    if (location.costs.green_tea_leaf) gameState.resources.green_tea_leaf -= location.costs.green_tea_leaf;
+    if (location.costs.spirit_essence) gameState.resources.spirit_essence -= location.costs.spirit_essence;
   }
 
   // Get time remaining for active adventure

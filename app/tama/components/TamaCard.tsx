@@ -137,6 +137,7 @@ const getMoodStatus = (tama: TamaData): string => {
 
 export const TamaCard: React.FC<TamaCardProps> = ({ tama, gameState, onInteract }) => {
   const [expanded, setExpanded] = useState(false);
+  const [isWiggling, setIsWiggling] = useState(false);
 
   const moodStatus = getMoodStatus(tama);
   const speciesEmoji = getSpeciesEmoji(tama.species);
@@ -147,6 +148,10 @@ export const TamaCard: React.FC<TamaCardProps> = ({ tama, gameState, onInteract 
 
   const handleInteract = (action: 'feed' | 'play' | 'clean' | 'wakeUp') => {
     onInteract(tama.id, action);
+
+    // Trigger wiggle animation for interaction feedback
+    setIsWiggling(true);
+    setTimeout(() => setIsWiggling(false), 600);
   };
 
   // Check if Tama is asleep
@@ -154,7 +159,7 @@ export const TamaCard: React.FC<TamaCardProps> = ({ tama, gameState, onInteract 
 
   // Smart button styling based on needs and sleep state
   const getActionButtonStyle = (action: 'feed' | 'play' | 'clean' | 'wakeUp') => {
-    const baseClasses = "flex-1 text-sm py-2 px-3 rounded transition-all duration-300 font-medium";
+    const baseClasses = "flex-1 text-sm py-2 px-3 rounded font-medium btn-animated micro-bounce";
 
     if (action === 'wakeUp') {
       if (isAsleep) {
@@ -261,13 +266,13 @@ export const TamaCard: React.FC<TamaCardProps> = ({ tama, gameState, onInteract 
 
   return (
     <div
-      className="bg-white rounded-lg shadow-md p-4 border border-gray-200 hover:shadow-lg transition-shadow"
+      className="bg-white rounded-lg shadow-md p-4 border border-gray-200 card-hover-lift interactive-glow"
       aria-label={`Tama card for ${tama.name}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
-          <span className="text-2xl" role="img" aria-label={`${tama.species} tama`}>
+          <span className={`text-2xl ${isWiggling ? 'tama-wiggle' : ''}`} role="img" aria-label={`${tama.species} tama`}>
             {speciesEmoji}
           </span>
           <div>
@@ -301,9 +306,9 @@ export const TamaCard: React.FC<TamaCardProps> = ({ tama, gameState, onInteract 
                 <span className="font-bold">{Math.round(value)}%</span>
               </div>
               <div className="flex items-center gap-1 mb-1">
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                <div className="flex-1 bg-gray-200 rounded-full h-2 progress-bar">
                   <div
-                    className={`h-2 rounded-full transition-all duration-500 ${getNeedBarColor(value)}`}
+                    className={`h-2 rounded-full progress-bar ${getNeedBarColor(value)} ${value <= 30 ? 'progress-pulse' : ''}`}
                     style={{ width: `${value}%` }}
                   />
                 </div>
@@ -328,10 +333,10 @@ export const TamaCard: React.FC<TamaCardProps> = ({ tama, gameState, onInteract 
       <div className="mb-4">
         <h4 className="text-sm font-medium text-gray-700 mb-2">Genetics</h4>
         <div className="grid grid-cols-2 gap-1 text-xs text-gray-600">
-          <div>Cuteness: {tama.genetics.cuteness}</div>
-          <div>Intelligence: {tama.genetics.intelligence}</div>
-          <div>Energy: {tama.genetics.energy}</div>
-          <div>Appetite: {tama.genetics.appetite}</div>
+          <div>Cuteness: {tama.genetics.cuteness.toFixed(1)}%</div>
+          <div>Intelligence: {tama.genetics.intelligence.toFixed(1)}%</div>
+          <div>Energy: {tama.genetics.energy.toFixed(1)}%</div>
+          <div>Appetite: {tama.genetics.appetite.toFixed(1)}%</div>
         </div>
       </div>
 
@@ -407,7 +412,7 @@ export const TamaCard: React.FC<TamaCardProps> = ({ tama, gameState, onInteract 
           <button
             onClick={() => setExpanded(!expanded)}
             aria-label={expanded ? 'Hide details' : 'Show more details'}
-            className="bg-gray-500 hover:bg-gray-600 text-white text-sm py-2 px-3 rounded transition-colors"
+            className="bg-gray-500 hover:bg-gray-600 text-white text-sm py-2 px-3 rounded btn-animated micro-bounce"
           >
             {expanded ? '▲' : '▼'}
           </button>

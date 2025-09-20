@@ -111,7 +111,7 @@ export const MILESTONES: Milestone[] = [
     rewards: {
       skillPoints: 2,
       tamaCoins: 100,
-      berries: 25,
+      rice_grain: 25,
       unlocks: ['crafting_workshop']
     }
   },
@@ -122,8 +122,8 @@ export const MILESTONES: Milestone[] = [
     rewards: {
       skillPoints: 2,
       tamaCoins: 150,
-      wood: 10,
-      stone: 5,
+      bamboo_fiber: 10,
+      silk_thread: 5,
       unlocks: ['auto_feeder', 'advanced_treats']
     }
   },
@@ -145,7 +145,7 @@ export const MILESTONES: Milestone[] = [
     rewards: {
       skillPoints: 5,
       tamaCoins: 500,
-      unlocks: ['specializations']
+      unlocks: ['specializations', 'alchemy_lab']
     }
   },
   {

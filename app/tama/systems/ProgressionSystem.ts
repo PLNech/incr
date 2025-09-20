@@ -127,14 +127,20 @@ export class ProgressionSystem {
     }
 
     // Grant resource rewards
-    if (milestone.rewards.berries) {
-      gameState.resources.berries += milestone.rewards.berries;
+    if (milestone.rewards.rice_grain) {
+      gameState.resources.rice_grain += milestone.rewards.rice_grain;
     }
-    if (milestone.rewards.wood) {
-      gameState.resources.wood += milestone.rewards.wood;
+    if (milestone.rewards.bamboo_fiber) {
+      gameState.resources.bamboo_fiber += milestone.rewards.bamboo_fiber;
     }
-    if (milestone.rewards.stone) {
-      gameState.resources.stone += milestone.rewards.stone;
+    if (milestone.rewards.silk_thread) {
+      gameState.resources.silk_thread += milestone.rewards.silk_thread;
+    }
+    if (milestone.rewards.green_tea_leaf) {
+      gameState.resources.green_tea_leaf += milestone.rewards.green_tea_leaf;
+    }
+    if (milestone.rewards.spirit_essence) {
+      gameState.resources.spirit_essence += milestone.rewards.spirit_essence;
     }
     if (milestone.rewards.happinessStars) {
       gameState.resources.happinessStars += milestone.rewards.happinessStars;
@@ -351,9 +357,11 @@ export class ProgressionSystem {
     // Reset resources (keep some based on prestige level)
     const keepRatio = Math.min(0.1 + (gameState.progression.prestigeLevel * 0.05), 0.5);
     gameState.resources.tamaCoins = Math.floor(gameState.resources.tamaCoins * keepRatio);
-    gameState.resources.berries = Math.floor(gameState.resources.berries * keepRatio);
-    gameState.resources.wood = Math.floor(gameState.resources.wood * keepRatio);
-    gameState.resources.stone = Math.floor(gameState.resources.stone * keepRatio);
+    gameState.resources.rice_grain = Math.floor(gameState.resources.rice_grain * keepRatio);
+    gameState.resources.bamboo_fiber = Math.floor(gameState.resources.bamboo_fiber * keepRatio);
+    gameState.resources.silk_thread = Math.floor(gameState.resources.silk_thread * keepRatio);
+    gameState.resources.green_tea_leaf = Math.floor(gameState.resources.green_tea_leaf * keepRatio);
+    gameState.resources.spirit_essence = Math.floor(gameState.resources.spirit_essence * keepRatio);
 
     // Clear Tamas and buildings
     gameState.tamas = [];

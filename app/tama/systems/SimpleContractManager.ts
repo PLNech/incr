@@ -137,7 +137,20 @@ export class SimpleContractManager {
       return false;
     }
 
-    // For now, assume player has the items (would integrate with inventory system)
+    // Check if player has the items in their inventory
+    if (!gameState.inventory) {
+      gameState.inventory = {};
+    }
+
+    const currentInventory = gameState.inventory[itemId] || 0;
+    if (currentInventory < quantity) {
+      return false; // Not enough items in inventory
+    }
+
+    // Deduct items from inventory
+    gameState.inventory[itemId] -= quantity;
+
+    // Update contract progress
     if (!contract.progress) contract.progress = { crafted: { quantity: 0 } };
     contract.progress.crafted!.quantity += quantity;
 
@@ -154,9 +167,11 @@ export class SimpleContractManager {
 
     // Award rewards
     gameState.resources.tamaCoins += contract.reward.tamaCoins;
-    if (contract.reward.berries) gameState.resources.berries += contract.reward.berries;
-    if (contract.reward.wood) gameState.resources.wood += contract.reward.wood;
-    if (contract.reward.stone) gameState.resources.stone += contract.reward.stone;
+    if (contract.reward.rice_grain) gameState.resources.rice_grain += contract.reward.rice_grain;
+    if (contract.reward.bamboo_fiber) gameState.resources.bamboo_fiber += contract.reward.bamboo_fiber;
+    if (contract.reward.silk_thread) gameState.resources.silk_thread += contract.reward.silk_thread;
+    if (contract.reward.green_tea_leaf) gameState.resources.green_tea_leaf += contract.reward.green_tea_leaf;
+    if (contract.reward.spirit_essence) gameState.resources.spirit_essence += contract.reward.spirit_essence;
     if (contract.reward.experience) {
       gameState.progression.experience += contract.reward.experience;
     }

@@ -62,14 +62,20 @@ export interface InteractionResult {
   needsChanged: Partial<TamaNeeds>;
 }
 
-// Resources
+// Resources - Redesigned around Japanese Crafting System
 export interface GameResources {
+  // Primary currency
   tamaCoins: number;
-  berries: number;
-  wood: number;
-  stone: number;
-  happinessStars: number;
-  evolutionCrystals: number;
+
+  // Japanese crafting materials (Tier 1 base materials)
+  rice_grain: number;        // Food crafting base (replaces berries)
+  bamboo_fiber: number;      // Structure/tool base (replaces wood)
+  silk_thread: number;       // Textile crafting base
+  green_tea_leaf: number;    // Medicine/spiritual base
+
+  // Special resources
+  spirit_essence: number;    // High-tier crafting (replaces stone + evolution crystals)
+  happinessStars: number;    // Social/prestige purchases (keep)
 }
 
 // Crafting
@@ -123,7 +129,7 @@ export interface BuildingType {
   id: string;
   name: string;
   description: string;
-  category: 'habitat' | 'workshop' | 'automation' | 'decoration' | 'prestige';
+  category: 'habitat' | 'workshop' | 'automation' | 'decoration' | 'prestige' | 'business' | 'adventure' | 'training' | 'social' | 'management' | 'production';
   cost: Record<string, number>;
   effects: {
     tamaCapacity?: number;
@@ -131,11 +137,113 @@ export interface BuildingType {
     passiveIncome?: Record<string, number>;
     globalMultiplier?: number;
     automation?: string[];
+
+    // Contract system effects
+    contractRewardMultiplier?: number;
+    contractDiscoveryRate?: number;
+    salesContractBonus?: number;
+    bulkContractChance?: number;
+
+    // Adventure system effects
+    adventureSuccessRate?: number;
+    adventureCooldownReduction?: number;
+    adventureRewardMultiplier?: number;
+    treasureStorage?: number;
+
+    // Training system effects
+    statTrainingEnabled?: boolean;
+    skillTrainingEnabled?: boolean;
+    trainingSpeedMultiplier?: number;
+    experienceBonus?: number;
+    specializationUnlock?: boolean;
+
+    // Social system effects
+    relationshipGrowthRate?: number;
+    socialBonusMultiplier?: number;
+    happinessPassiveBonus?: number;
+    stressReduction?: number;
+    groupActivityBonus?: number;
+
+    // Management effects
+    jobAssignmentEnabled?: boolean;
+    managementEfficiencyBonus?: number;
+    automationLevelIncrease?: number;
+
+    // Production bonuses
+    woodCraftingBonus?: number;
+    stoneCraftingBonus?: number;
+
+    // Alchemy Lab effects
+    alchemyExperimentationEnabled?: boolean;
+    recipeDiscoveryRate?: number;
+    experimentSuccessBonus?: number;
   };
+  jobSlots?: number; // How many Tamas can be assigned to work here
   maxLevel: number;
   requiredLevel: number;
   requiredPrestige?: number;
   unlockConditions?: string[];
+}
+
+// JOB ASSIGNMENT SYSTEM
+export type TamaJobType =
+  | 'trainer'           // Training Ground - improves stat/skill training
+  | 'teacher'           // Academy - boosts learning and XP
+  | 'social_coordinator' // Social Center - manages relationships
+  | 'lumberjack'        // Lumber Mill - increases wood production
+  | 'miner'             // Stone Quarry - increases stone production
+  | 'manager'           // Employment Center - oversees other jobs
+  | 'unemployed';       // Not assigned to any building
+
+export interface TamaJob {
+  tamaId: string;
+  jobType: TamaJobType;
+  buildingId: string;
+  startTime: number;
+  experience: number;    // Job experience (separate from main XP)
+  level: number;         // Job level (1-5)
+  efficiency: number;    // How well they perform (0.5-2.0 multiplier)
+}
+
+export interface JobEffects {
+  // Trainer effects (Training Ground)
+  trainer?: {
+    statTrainingBonus: number;        // 1.1-1.5x training speed
+    trainingQualityBonus: number;     // Better stat gains
+  };
+
+  // Teacher effects (Academy)
+  teacher?: {
+    experienceBonus: number;          // 1.1-1.4x XP for all Tamas
+    skillLearningBonus: number;       // Faster skill development
+    specializationSlots: number;      // Extra specialization slots
+  };
+
+  // Social Coordinator effects (Social Center)
+  social_coordinator?: {
+    relationshipBonus: number;        // 1.2-1.6x relationship growth
+    happinessAura: number;           // +1-3 happiness per hour for all
+    conflictReduction: number;       // Reduces negative relationship events
+  };
+
+  // Lumberjack effects (Lumber Mill)
+  lumberjack?: {
+    woodProductionBonus: number;     // 1.2-1.8x wood generation
+    craftingWoodBonus: number;       // Cheaper wood costs for crafting
+  };
+
+  // Miner effects (Stone Quarry)
+  miner?: {
+    stoneProductionBonus: number;    // 1.2-1.8x stone generation
+    buildingStoneBonus: number;      // Cheaper stone costs for buildings
+  };
+
+  // Manager effects (Employment Center)
+  manager?: {
+    globalEfficiencyBonus: number;   // 1.1-1.3x all job effectiveness
+    jobSlotIncrease: number;         // +1 job slot for some buildings
+    automationBonus: number;         // Enhanced automation effects
+  };
 }
 
 export interface BuildingEffects {
@@ -170,9 +278,11 @@ export interface Milestone {
     skillPoints: number;
     unlocks?: string[];
     tamaCoins?: number;
-    berries?: number;
-    wood?: number;
-    stone?: number;
+    rice_grain?: number;
+    bamboo_fiber?: number;
+    silk_thread?: number;
+    green_tea_leaf?: number;
+    spirit_essence?: number;
     happinessStars?: number;
   };
 }
@@ -275,6 +385,14 @@ export interface TamaGameState {
   crafting: {
     queue: CraftingQueue[];
     unlockedRecipes: string[];
+    // Japanese Crafting System integration
+    discoveredRecipes?: Set<string>;
+    craftingXP?: number;
+    craftingLevel?: number;
+    totalItemsCrafted?: number;
+    unlockedCategories?: Set<string>;
+    hasAlchemyLab?: boolean;
+    alchemyLabLevel?: number;
   };
   progression: PlayerProgression;
   unlocks: {

@@ -16,8 +16,11 @@ export interface AdventureLocation {
   };
   costs?: {
     tamaCoins?: number;
-    berries?: number;
-    evolutionCrystals?: number;
+    rice_grain?: number;
+    bamboo_fiber?: number;
+    silk_thread?: number;
+    green_tea_leaf?: number;
+    spirit_essence?: number;
     energy: number; // Energy cost for the Tama
   };
   unlockConditions?: {
@@ -49,17 +52,18 @@ export const ADVENTURE_LOCATIONS: AdventureLocation[] = [
     },
     rewards: {
       common: [
-        { type: 'resource', id: 'berries', quantity: 3, weight: 100 },
-        { type: 'resource', id: 'wood', quantity: 1, weight: 80 },
+        { type: 'resource', id: 'rice_grain', quantity: 3, weight: 100 },
+        { type: 'item', id: 'wild_herbs', quantity: 2, weight: 90 },
+        { type: 'item', id: 'small_stones', quantity: 2, weight: 85 },
         { type: 'experience', id: 'tama_xp', quantity: 5, weight: 60 }
       ],
       uncommon: [
-        { type: 'resource', id: 'berries', quantity: 6, weight: 30 },
-        { type: 'resource', id: 'wood', quantity: 2, weight: 25 },
-        { type: 'item', id: 'shiny_pebble', quantity: 1, weight: 15 }
+        { type: 'item', id: 'bamboo_fiber', quantity: 1, weight: 40 },
+        { type: 'item', id: 'cotton_fiber', quantity: 1, weight: 35 },
+        { type: 'item', id: 'shiitake_mushroom', quantity: 1, weight: 25 }
       ],
       rare: [
-        { type: 'resource', id: 'stone', quantity: 1, weight: 5 },
+        { type: 'item', id: 'wild_berry', quantity: 1, weight: 8 },
         { type: 'achievement', id: 'first_explorer', quantity: 1, weight: 3 }
       ]
     }
@@ -79,18 +83,18 @@ export const ADVENTURE_LOCATIONS: AdventureLocation[] = [
     },
     rewards: {
       common: [
-        { type: 'resource', id: 'wood', quantity: 3, weight: 100 },
-        { type: 'resource', id: 'berries', quantity: 5, weight: 70 },
-        { type: 'item', id: 'forest_herb', quantity: 1, weight: 40 }
+        { type: 'item', id: 'bamboo_fiber', quantity: 3, weight: 100 },
+        { type: 'item', id: 'wood_log', quantity: 2, weight: 95 },
+        { type: 'item', id: 'shiitake_mushroom', quantity: 2, weight: 70 }
       ],
       uncommon: [
-        { type: 'resource', id: 'wood', quantity: 6, weight: 40 },
-        { type: 'item', id: 'rare_mushroom', quantity: 1, weight: 25 },
-        { type: 'resource', id: 'stone', quantity: 2, weight: 30 }
+        { type: 'item', id: 'silk_thread', quantity: 1, weight: 40 },
+        { type: 'item', id: 'medicinal_herb', quantity: 1, weight: 35 },
+        { type: 'item', id: 'cherry_blossom', quantity: 1, weight: 25 }
       ],
       rare: [
-        { type: 'resource', id: 'evolutionCrystals', quantity: 1, weight: 8 },
-        { type: 'item', id: 'ancient_seed', quantity: 1, weight: 5 }
+        { type: 'resource', id: 'spirit_essence', quantity: 1, weight: 8 },
+        { type: 'item', id: 'golden_bamboo', quantity: 1, weight: 5 }
       ]
     },
     unlockConditions: {
@@ -108,23 +112,23 @@ export const ADVENTURE_LOCATIONS: AdventureLocation[] = [
     riskLevel: 'medium',
     costs: {
       tamaCoins: 25,
-      berries: 5,
+      rice_grain: 5,
       energy: 50
     },
     rewards: {
       common: [
-        { type: 'resource', id: 'stone', quantity: 2, weight: 90 },
-        { type: 'item', id: 'river_pearl', quantity: 1, weight: 50 },
+        { type: 'item', id: 'river_stone', quantity: 2, weight: 90 },
+        { type: 'item', id: 'water_lily', quantity: 1, weight: 70 },
         { type: 'experience', id: 'tama_xp', quantity: 15, weight: 70 }
       ],
       uncommon: [
-        { type: 'resource', id: 'stone', quantity: 4, weight: 35 },
-        { type: 'item', id: 'water_crystal', quantity: 1, weight: 20 },
-        { type: 'resource', id: 'happinessStars', quantity: 1, weight: 15 }
+        { type: 'item', id: 'sea_salt', quantity: 1, weight: 40 },
+        { type: 'item', id: 'crystal_water', quantity: 1, weight: 30 },
+        { type: 'item', id: 'river_clay', quantity: 1, weight: 25 }
       ],
       rare: [
-        { type: 'resource', id: 'evolutionCrystals', quantity: 2, weight: 10 },
-        { type: 'item', id: 'legendary_scale', quantity: 1, weight: 3 }
+        { type: 'resource', id: 'spirit_essence', quantity: 2, weight: 10 },
+        { type: 'item', id: 'moonstone', quantity: 1, weight: 3 }
       ]
     },
     unlockConditions: {
@@ -143,7 +147,7 @@ export const ADVENTURE_LOCATIONS: AdventureLocation[] = [
     riskLevel: 'high',
     costs: {
       tamaCoins: 50,
-      berries: 10,
+      bamboo_fiber: 10,
       energy: 70
     },
     rewards: {
@@ -153,12 +157,12 @@ export const ADVENTURE_LOCATIONS: AdventureLocation[] = [
         { type: 'item', id: 'cave_gem', quantity: 1, weight: 60 }
       ],
       uncommon: [
-        { type: 'resource', id: 'evolutionCrystals', quantity: 1, weight: 40 },
+        { type: 'resource', id: 'spirit_essence', quantity: 1, weight: 40 },
         { type: 'item', id: 'rare_ore', quantity: 1, weight: 25 },
         { type: 'resource', id: 'happinessStars', quantity: 2, weight: 20 }
       ],
       rare: [
-        { type: 'resource', id: 'evolutionCrystals', quantity: 3, weight: 15 },
+        { type: 'resource', id: 'spirit_essence', quantity: 3, weight: 15 },
         { type: 'item', id: 'dragon_egg_fragment', quantity: 1, weight: 5 },
         { type: 'achievement', id: 'cave_explorer', quantity: 1, weight: 8 }
       ]
@@ -180,24 +184,24 @@ export const ADVENTURE_LOCATIONS: AdventureLocation[] = [
     riskLevel: 'extreme',
     costs: {
       tamaCoins: 100,
-      berries: 20,
-      evolutionCrystals: 1,
+      silk_thread: 20,
+      spirit_essence: 1,
       energy: 90
     },
     rewards: {
       common: [
         { type: 'resource', id: 'happinessStars', quantity: 3, weight: 70 },
-        { type: 'resource', id: 'evolutionCrystals', quantity: 2, weight: 80 },
+        { type: 'resource', id: 'spirit_essence', quantity: 2, weight: 80 },
         { type: 'experience', id: 'tama_xp', quantity: 50, weight: 90 }
       ],
       uncommon: [
-        { type: 'resource', id: 'evolutionCrystals', quantity: 5, weight: 30 },
+        { type: 'resource', id: 'spirit_essence', quantity: 5, weight: 30 },
         { type: 'item', id: 'sky_essence', quantity: 1, weight: 25 },
         { type: 'resource', id: 'tamaCoins', quantity: 200, weight: 35 }
       ],
       rare: [
         { type: 'item', id: 'cosmic_feather', quantity: 1, weight: 10 },
-        { type: 'resource', id: 'evolutionCrystals', quantity: 10, weight: 8 },
+        { type: 'resource', id: 'spirit_essence', quantity: 10, weight: 8 },
         { type: 'achievement', id: 'sky_walker', quantity: 1, weight: 5 }
       ]
     },
@@ -218,24 +222,24 @@ export const ADVENTURE_LOCATIONS: AdventureLocation[] = [
     riskLevel: 'extreme',
     costs: {
       tamaCoins: 500,
-      berries: 50,
-      evolutionCrystals: 5,
+      green_tea_leaf: 50,
+      spirit_essence: 5,
       energy: 100
     },
     rewards: {
       common: [
-        { type: 'resource', id: 'evolutionCrystals', quantity: 5, weight: 60 },
+        { type: 'resource', id: 'spirit_essence', quantity: 5, weight: 60 },
         { type: 'resource', id: 'happinessStars', quantity: 10, weight: 70 },
         { type: 'experience', id: 'tama_xp', quantity: 100, weight: 80 }
       ],
       uncommon: [
-        { type: 'resource', id: 'evolutionCrystals', quantity: 15, weight: 25 },
+        { type: 'resource', id: 'spirit_essence', quantity: 15, weight: 25 },
         { type: 'item', id: 'void_essence', quantity: 1, weight: 20 },
         { type: 'resource', id: 'tamaCoins', quantity: 1000, weight: 30 }
       ],
       rare: [
         { type: 'item', id: 'reality_shard', quantity: 1, weight: 5 },
-        { type: 'resource', id: 'evolutionCrystals', quantity: 50, weight: 3 },
+        { type: 'resource', id: 'spirit_essence', quantity: 50, weight: 3 },
         { type: 'achievement', id: 'void_master', quantity: 1, weight: 2 }
       ]
     },

@@ -5,6 +5,7 @@ import { TamaGameState } from '../types';
 import { TamaEngine } from '../engine/TamaEngine';
 import { ADVENTURE_LOCATIONS, ADVENTURE_ITEMS } from '../data/adventureLocations';
 import { useEscapeKey } from '../hooks/useEscapeKey';
+import { formatResourceCost } from '../utils/resourceUtils';
 
 interface AdventureModalProps {
   isVisible: boolean;
@@ -61,20 +62,22 @@ export const AdventureModal: React.FC<AdventureModalProps> = ({
 
     return (
       (!location.costs.tamaCoins || gameState.resources.tamaCoins >= location.costs.tamaCoins) &&
-      (!location.costs.berries || gameState.resources.berries >= location.costs.berries) &&
-      (!location.costs.evolutionCrystals || gameState.resources.evolutionCrystals >= location.costs.evolutionCrystals)
+      (!location.costs.rice_grain || gameState.resources.rice_grain >= location.costs.rice_grain) &&
+      (!location.costs.bamboo_fiber || gameState.resources.bamboo_fiber >= location.costs.bamboo_fiber) &&
+      (!location.costs.silk_thread || gameState.resources.silk_thread >= location.costs.silk_thread) &&
+      (!location.costs.green_tea_leaf || gameState.resources.green_tea_leaf >= location.costs.green_tea_leaf) &&
+      (!location.costs.spirit_essence || gameState.resources.spirit_essence >= location.costs.spirit_essence)
     );
   };
 
-  const formatCost = (costs: any): string => {
+  const formatAdventureCost = (costs: any): string => {
     if (!costs) return 'Free';
 
-    const parts: string[] = [];
-    if (costs.tamaCoins) parts.push(`${costs.tamaCoins} 🪙`);
-    if (costs.berries) parts.push(`${costs.berries} 🍎`);
-    if (costs.evolutionCrystals) parts.push(`${costs.evolutionCrystals} 💎`);
-    if (costs.energy) parts.push(`${costs.energy} ⚡ Energy`);
+    // Handle special adventure costs like energy
+    const energyCost = costs.energy ? `${costs.energy} ⚡ Energy` : '';
+    const resourceCost = formatResourceCost(costs);
 
+    const parts = [resourceCost, energyCost].filter(Boolean);
     return parts.length ? parts.join(', ') : 'Free';
   };
 
@@ -181,7 +184,7 @@ export const AdventureModal: React.FC<AdventureModalProps> = ({
                         <p className="text-sm text-gray-600 mb-3">{location.description}</p>
 
                         <div className="text-xs text-gray-600 mb-3 space-y-1">
-                          <div><strong>Cost:</strong> {formatCost(location.costs)}</div>
+                          <div><strong>Cost:</strong> {formatAdventureCost(location.costs)}</div>
                           <div><strong>Success Rate:</strong> {Math.round(location.baseSuccessRate * 100)}% base</div>
                           <div><strong>Rewards:</strong> {formatRewards(location.rewards)}</div>
                         </div>

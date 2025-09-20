@@ -2,28 +2,13 @@
 
 import React from 'react';
 import { GameResources } from '../types';
+import { RESOURCE_CONFIGS, ResourceConfig } from '../utils/resourceUtils';
 
 interface ResourceBarProps {
   resources: GameResources;
   compact?: boolean;
 }
 
-interface ResourceConfig {
-  key: keyof GameResources;
-  name: string;
-  icon: string;
-  priority: number;
-  lowThreshold: number;
-}
-
-const resourceConfigs: ResourceConfig[] = [
-  { key: 'tamaCoins', name: 'Tama Coins', icon: '🪙', priority: 1, lowThreshold: 100 },
-  { key: 'berries', name: 'Berries', icon: '🍎', priority: 2, lowThreshold: 10 },
-  { key: 'wood', name: 'Wood', icon: '🪵', priority: 3, lowThreshold: 5 },
-  { key: 'stone', name: 'Stone', icon: '🪨', priority: 4, lowThreshold: 5 },
-  { key: 'happinessStars', name: 'Happiness Stars', icon: '⭐', priority: 5, lowThreshold: 0 },
-  { key: 'evolutionCrystals', name: 'Evolution Crystals', icon: '💎', priority: 6, lowThreshold: 0 }
-];
 
 const formatNumber = (value: number): string => {
   return value.toLocaleString();
@@ -37,18 +22,18 @@ const getResourceColor = (value: number, threshold: number): string => {
 
 export const ResourceBar: React.FC<ResourceBarProps> = ({ resources, compact = false }) => {
   const displayResources = compact
-    ? resourceConfigs.filter(config => config.priority <= 4) // Show top 4 in compact mode
-    : resourceConfigs;
+    ? RESOURCE_CONFIGS.filter(config => config.priority <= 5) // Show top 5 in compact mode (coin + 4 materials)
+    : RESOURCE_CONFIGS;
 
   return (
     <div
-      className={`bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden ${compact ? 'py-1 px-2' : 'py-3 px-4'}`}
+      className={`bg-gradient-to-r from-amber-50 via-green-50 to-purple-50 border border-gray-200 rounded-lg shadow-sm overflow-hidden ${compact ? 'py-2 px-3' : 'py-3 px-4'}`}
       role="region"
-      aria-label="Current resources and inventory"
+      aria-label="Japanese crafting materials and resources"
     >
       <div className="sr-only">Current resources</div>
 
-      <div className={`grid ${compact ? 'grid-cols-4 gap-2' : 'grid-cols-6 gap-4'} items-center`}>
+      <div className={`grid ${compact ? 'grid-cols-5 gap-2' : 'grid-cols-7 gap-3'} items-center`}>
         {displayResources.map((config, index) => {
           const value = resources[config.key];
           const colorClass = getResourceColor(value, config.lowThreshold);
@@ -78,7 +63,10 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({ resources, compact = f
                     {config.name}
                   </div>
                 )}
-                <div className={`font-bold ${colorClass} ${compact ? 'text-sm' : 'text-lg'}`}>
+                <div
+                  className={`font-bold ${colorClass} ${compact ? 'text-sm' : 'text-lg'} resource-increment`}
+                  data-increment=""
+                >
                   {formatNumber(value)}
                 </div>
               </div>

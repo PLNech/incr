@@ -96,19 +96,29 @@ export const SimpleContractsModal: React.FC<SimpleContractsModalProps> = ({
           <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm font-medium">
             💰 {contract.reward.tamaCoins} coins
           </span>
-          {contract.reward.berries && (
-            <span className="bg-red-200 text-red-800 px-2 py-1 rounded text-sm font-medium">
-              🫐 {contract.reward.berries} berries
+          {contract.reward.rice_grain && (
+            <span className="bg-green-200 text-green-800 px-2 py-1 rounded text-sm font-medium">
+              🌾 {contract.reward.rice_grain} rice grain
             </span>
           )}
-          {contract.reward.wood && (
-            <span className="bg-amber-200 text-amber-800 px-2 py-1 rounded text-sm font-medium">
-              🪵 {contract.reward.wood} wood
+          {contract.reward.bamboo_fiber && (
+            <span className="bg-green-200 text-green-800 px-2 py-1 rounded text-sm font-medium">
+              🎋 {contract.reward.bamboo_fiber} bamboo fiber
             </span>
           )}
-          {contract.reward.stone && (
-            <span className="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm font-medium">
-              🪨 {contract.reward.stone} stone
+          {contract.reward.silk_thread && (
+            <span className="bg-purple-200 text-purple-800 px-2 py-1 rounded text-sm font-medium">
+              🧵 {contract.reward.silk_thread} silk thread
+            </span>
+          )}
+          {contract.reward.green_tea_leaf && (
+            <span className="bg-green-200 text-green-800 px-2 py-1 rounded text-sm font-medium">
+              🍃 {contract.reward.green_tea_leaf} tea leaf
+            </span>
+          )}
+          {contract.reward.spirit_essence && (
+            <span className="bg-blue-200 text-blue-800 px-2 py-1 rounded text-sm font-medium">
+              🔮 {contract.reward.spirit_essence} spirit essence
             </span>
           )}
           {contract.reward.experience && (
@@ -121,7 +131,7 @@ export const SimpleContractsModal: React.FC<SimpleContractsModalProps> = ({
 
       <button
         onClick={() => onAcceptContract(contract.id)}
-        className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded font-medium transition-colors"
+        className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded font-medium btn-animated btn-success"
       >
         Accept Contract
       </button>
@@ -173,7 +183,7 @@ export const SimpleContractsModal: React.FC<SimpleContractsModalProps> = ({
                                 input.value = '';
                               }
                             }}
-                            className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-sm"
+                            className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-sm btn-animated btn-success"
                           >
                             Sell
                           </button>
@@ -201,26 +211,46 @@ export const SimpleContractsModal: React.FC<SimpleContractsModalProps> = ({
                 {contract.progress?.crafted?.quantity || 0}/{contract.requirements.craft.quantity}
               </span>
               <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="1"
-                  max={contract.requirements.craft.quantity - (contract.progress?.crafted?.quantity || 0)}
-                  className="w-16 px-2 py-1 border rounded text-sm"
-                  id={`craft-${contract.id}`}
-                />
-                <button
-                  onClick={() => {
-                    const input = document.getElementById(`craft-${contract.id}`) as HTMLInputElement;
-                    const quantity = parseInt(input.value) || 0;
-                    if (quantity > 0) {
-                      onSubmitCraftedItem(contract.id, contract.requirements.craft!.itemId, quantity);
-                      input.value = '';
-                    }
-                  }}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm"
-                >
-                  Submit
-                </button>
+                {(() => {
+                  const itemId = contract.requirements.craft!.itemId;
+                  const currentInventory = gameState.inventory?.[itemId] || 0;
+                  const remainingNeeded = contract.requirements.craft!.quantity - (contract.progress?.crafted?.quantity || 0);
+                  const maxSubmittable = Math.min(remainingNeeded, currentInventory);
+
+                  return (
+                    <>
+                      <span className="text-xs text-gray-600">
+                        (Have: {currentInventory})
+                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        max={maxSubmittable}
+                        className="w-16 px-2 py-1 border rounded text-sm"
+                        id={`craft-${contract.id}`}
+                        disabled={currentInventory === 0}
+                      />
+                      <button
+                        onClick={() => {
+                          const input = document.getElementById(`craft-${contract.id}`) as HTMLInputElement;
+                          const quantity = parseInt(input.value) || 0;
+                          if (quantity > 0) {
+                            onSubmitCraftedItem(contract.id, contract.requirements.craft!.itemId, quantity);
+                            input.value = '';
+                          }
+                        }}
+                        disabled={currentInventory === 0}
+                        className={`px-2 py-1 rounded text-sm btn-animated ${
+                          currentInventory > 0
+                            ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        Submit
+                      </button>
+                    </>
+                  );
+                })()}
               </div>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -231,6 +261,18 @@ export const SimpleContractsModal: React.FC<SimpleContractsModalProps> = ({
                 }}
               />
             </div>
+            {(() => {
+              const itemId = contract.requirements.craft!.itemId;
+              const currentInventory = gameState.inventory?.[itemId] || 0;
+              if (currentInventory === 0) {
+                return (
+                  <div className="text-amber-600 text-sm font-medium">
+                    ⚠️ No {itemId.replace('_', ' ')} in inventory - craft some first!
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         )}
 
@@ -274,15 +316,15 @@ export const SimpleContractsModal: React.FC<SimpleContractsModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-backdrop">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col modal-content">
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-800">Contracts</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
+              className="text-gray-400 hover:text-gray-600 text-2xl btn-animated micro-bounce"
             >
               ×
             </button>
@@ -292,9 +334,9 @@ export const SimpleContractsModal: React.FC<SimpleContractsModalProps> = ({
           <div className="flex gap-4 mt-4">
             <button
               onClick={() => setActiveTab('available')}
-              className={`px-4 py-2 rounded font-medium transition-colors ${
+              className={`px-4 py-2 rounded font-medium btn-animated tab-slide-indicator ${
                 activeTab === 'available'
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-blue-500 text-white active'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
@@ -302,9 +344,9 @@ export const SimpleContractsModal: React.FC<SimpleContractsModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('active')}
-              className={`px-4 py-2 rounded font-medium transition-colors ${
+              className={`px-4 py-2 rounded font-medium btn-animated tab-slide-indicator ${
                 activeTab === 'active'
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-blue-500 text-white active'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
